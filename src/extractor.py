@@ -18,6 +18,7 @@ from .nlp_processor import make_summary
 import asyncio
 
 progress = {"total": 0, "processed": 0}
+df_global = None  # Global variable to store the DataFrame
 
 # Function to extract the title and meaningful content from a BeautifulSoup object
 def extract_content(soup):
@@ -52,7 +53,7 @@ async def parse_html_content(url: str):
 
 # Asynchronous function to process a CSV file containing URLs
 async def process_csv(contents: bytes) -> str:
-    global progress
+    global progress, df_global
 
     # Check if the contents are empty
     if not contents:
@@ -97,14 +98,10 @@ async def process_csv(contents: bytes) -> str:
     df['Summary'] = summaries
     df['Accessibility'] = accessibility
     
-    # Export the data to a .txt file
-    with open("exported_data.txt", "w", encoding="utf-8") as txt_file:
-        txt_file.write(df.to_string())
-    
     # Reset progress to 0 after completion
     progress = {"total": 0, "processed": 0}
     
-    global df_global
+    # Store the DataFrame in the global variable
     df_global = df
     
     return df.to_string()
