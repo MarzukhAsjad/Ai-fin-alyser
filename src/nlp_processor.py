@@ -4,7 +4,7 @@ This module provides functionality for summarizing text using Natural Language T
 It includes functions for tokenizing text, removing stop words, calculating word frequencies,
 and generating a summary based on sentence scores.
 Functions:
-    make_summary(text): Generates a summary of the given text by selecting sentences based on word frequencies.
+    make_summary(text, ratio=0.1): Generates a summary of the given text by selecting sentences based on word frequencies.
 TODO:
     - Replace nltk with a Large Language Model (LLM) for more advanced text processing and summarization.
     - Ensure the new implementation maintains or improves the performance and accuracy of the current summarization process.
@@ -26,9 +26,9 @@ nltk.data.path.append(CACHE_DIR)
 nltk.download('punkt', download_dir=CACHE_DIR)
 nltk.download('stopwords', download_dir=CACHE_DIR)
 
-def make_summary(text):
+def make_summary(text, ratio=0.1):
     sentences = sent_tokenize(text)
-    num_sentences = min(len(sentences), text.count('.') + text.count('!') + text.count('?'))
+    num_sentences = max(1, int(len(sentences) * ratio))
 
     # Text into words
     words = word_tokenize(text.lower())
@@ -50,11 +50,8 @@ def make_summary(text):
     # Sort sentences by scores in descending order
     sorted_sentences = sorted(sentence_scores, key=lambda x: x[1], reverse=True)
 
-    # Randomly select the top `num_sentences` sentences for the summary
-    random_sentences = random.sample(sorted_sentences, min(num_sentences, len(sorted_sentences)))
-
-    # Sort the randomly selected sentences based on their original order in the text
-    summary_sentences = sorted(random_sentences, key=lambda x: x[0])
+    # Select the top `num_sentences` sentences for the summary
+    summary_sentences = sorted(sorted_sentences[:num_sentences], key=lambda x: x[0])
 
     # Create the summary
     summary = ' '.join([sentences[i] for i, _ in summary_sentences])
