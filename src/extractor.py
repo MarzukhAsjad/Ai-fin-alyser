@@ -36,7 +36,7 @@ def extract_content(soup):
     return title, content
 
 # Asynchronous function to parse the HTML content of a URL and put the result in a queue
-async def parse_html_content(url: str, queue: asyncio.Queue):
+async def parse_html_content(url: str, queue: asyncio.Queue, idx: int, ratio=0.1):
     async with httpx.AsyncClient() as client:
         try:
             # Send a GET request to the URL
@@ -48,15 +48,15 @@ async def parse_html_content(url: str, queue: asyncio.Queue):
             title, non_title_content = extract_content(soup)
             
             # Generate summary using make_summary
-            summary = make_summary(non_title_content)
+            summary = make_summary(non_title_content, ratio)
             
-            await queue.put((title, non_title_content, summary, "Accessible"))
+            await queue.put((idx, title, non_title_content, summary, "Accessible"))
         except httpx.RequestError as e:
             print(f"Error processing URL {url}: {e}")
-            await queue.put(("No Title", "", "", "Not Accessible"))
+            await queue.put((idx, "No Title", "", "", "Not Accessible"))
 
 # Asynchronous function to process a CSV file containing URLs and yield progress updates
-async def process_csv(contents: bytes):
+async def process_csv(contents: bytes, ratio=0.1):
     global df_global
 
     try:
@@ -77,51 +77,37 @@ async def process_csv(contents: bytes):
         urls = df['URL'].tolist()
         total = len(urls)
         processed = 0
-        accessibility = []
-        titles = []
-        contents = []
-        summaries = []
+        accessibility = [None] * total
+        titles = [None] * total
+        contents = [None] * total
+        summaries = [None] * total
         
         # Create an asyncio.Queue to collect results
         queue = asyncio.Queue()
         
         # Create tasks to process each URL
-        tasks = [parse_html_content(url, queue) for url in urls]
+        tasks = [parse_html_content(url, queue, idx, ratio) for idx, url in enumerate(urls)]
         
         # Process results as they are put in the queue
         for task in asyncio.as_completed(tasks):
             try:
                 await task
-                result = await queue.get()
-                title, content, summary, accessibility_status = result
-                titles.append(title)
-                contents.append(content)
-                summaries.append(summary)
-                accessibility.append(accessibility_status)
+                idx, title, content, summary, accessibility_status = await queue.get()
+                titles[idx] = title
+                contents[idx] = content
+                summaries[idx] = summary
+                accessibility[idx] = accessibility_status
             except Exception as e:
                 logging.error(f"Error during processing: {e}")
-                titles.append("No Title")
-                contents.append("")
-                summaries.append("")
-                accessibility.append("Not Accessible")
+                titles[idx] = "No Title"
+                contents[idx] = ""
+                summaries[idx] = ""
+                accessibility[idx] = "Not Accessible"
             finally:
                 processed += 1
                 update_message = f"Processed {processed}/{total}\n"
                 logging.info(update_message)
                 yield update_message
-        
-        # Process any remaining items in the queue
-        while not queue.empty():
-            result = await queue.get()
-            title, content, summary, accessibility_status = result
-            titles.append(title)
-            contents.append(content)
-            summaries.append(summary)
-            accessibility.append(accessibility_status)
-            processed += 1
-            update_message = f"Processed {processed}/{total}\n"
-            logging.info(update_message)
-            yield update_message
         
         # Add new columns to the DataFrame
         df['Title'] = titles
@@ -143,9 +129,9 @@ async def process_csv(contents: bytes):
         yield f"Error during processing: {e}\n"
 
 # Wrapper function to run the asynchronous process_csv function
-def process_csv_sync(contents: bytes):
+def process_csv_sync(contents: bytes, ratio=0.1):
     async def async_process():
-        async for update in process_csv(contents):
+        async for update in process_csv(contents, ratio):
             yield update
     return async_process()
 
