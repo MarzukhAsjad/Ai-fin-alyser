@@ -16,10 +16,17 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.probability import FreqDist
+
+from corpus_similarity import Similarity
+
 import os
 
 # Define cache directory
 CACHE_DIR = os.path.join(os.path.dirname(__file__), ".nltk_cache")
+
+# Initialize the corpus similarity module
+cs = Similarity(language="eng")
+
 
 # Ensure necessary NLTK resources are downloaded and stored in cache
 nltk.data.path.append(CACHE_DIR)
@@ -62,3 +69,9 @@ def make_summary(text, ratio=0.1, max_sentences=10):
     summary = ' '.join([sentences[i].replace('\n', ' ').replace('\n\n', ' ') for i, _ in summary_sentences])
 
     return summary
+
+# Add a function to compare two corpora and return the correlation value
+def compare_corpora(corpus1, corpus2) -> float:
+    result = cs.calculate(corpus1, corpus2)
+    print(f"Correlation between corpus1 and corpus2: {result}")
+    return result
