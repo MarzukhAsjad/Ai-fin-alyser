@@ -4,7 +4,9 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from .extractor import process_csv_sync, print_data_to_file
+from .causal import read_csv_extract_corpora, store_correlation_scores
 import logging
+import os
 
 app = FastAPI()
 
@@ -48,3 +50,14 @@ async def upload_csv(request: Request, file: UploadFile = File(...)):
 def print_data(request: Request):
     result = print_data_to_file()
     return {"message": result}
+
+# Endpoint to find correlation between all available corpora
+@app.get("/calculate-correlation/")
+@limiter.limit("3/second")
+def calculate_correlation(request: Request):
+    # Ensure the file path is correctly referenced
+    file_path = os.path.join(os.path.dirname(__file__), "..", "..", "printed_data.csv")
+    print("File path:", file_path)
+    read_csv_extract_corpora(file_path)
+    store_correlation_scores("bolt://localhost:7687", "neo4j", "password")
+    return {"message": "Correlation calculation completed and ready for querying."}
