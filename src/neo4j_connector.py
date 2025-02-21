@@ -1,5 +1,6 @@
 from neo4j import GraphDatabase
 
+# TODO: Set up authentication for the Neo4j database to be extracted from environment variables
 class Neo4jConnector:
     def __init__(self, uri, user, password):
         self.driver = GraphDatabase.driver(uri, auth=(user, password))

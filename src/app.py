@@ -61,3 +61,7 @@ def calculate_correlation(request: Request):
     read_csv_extract_corpora(file_path)
     store_correlation_scores("bolt://localhost:7687", "neo4j", "password")
     return {"message": "Correlation calculation completed and ready for querying."}
+
+# TODO: Add an endpoint to query the Neo4j database for correlation values
+# The queries will be: pairwise causal relationship, top N causal relationships, and all causal relationships
+# The results will be returned as JSON responses
