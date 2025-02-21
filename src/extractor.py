@@ -30,7 +30,7 @@ def extract_content(soup):
     return title, content
 
 # Function to parse the HTML content of a URL
-def parse_html_content(url: str, idx: int):
+def parse_html_content(url: str):
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -41,15 +41,10 @@ def parse_html_content(url: str, idx: int):
         # Generate summary using make_summary
         summary = make_summary(non_title_content)
         
-        # Export meaningful content and summary to a .html file
-        html_filename = f"exported_html_{idx}.html"
-        with open(html_filename, "w", encoding='utf-8') as html_file:
-            html_file.write(f"<h1>{title}</h1>\n{non_title_content}\n<h2>Summary</h2>\n<p>{summary}</p>")
-        
-        return "Accessible"
+        return title, non_title_content, summary, "Accessible"
     except requests.exceptions.RequestException as e:
         print(f"Error processing URL {url}: {e}")
-        return "Not Accessible"
+        return None, None, None, "Not Accessible"
 
 # Function to process a CSV file containing URLs
 def process_csv(contents: bytes) -> str:
@@ -73,15 +68,24 @@ def process_csv(contents: bytes) -> str:
     urls = df['URL'].tolist()
     progress["total"] = len(urls)
     accessibility = []
+    titles = []
+    contents = []
+    summaries = []
     
-    # Process each URL by calling the parse_html_content function, if fails, then URl is not accessible
+    # Process each URL by calling the parse_html_content function
     for idx, url in enumerate(urls):
         print(f"Processing URL: {url}")
-        accessibility_status = parse_html_content(url, idx)
+        title, content, summary, accessibility_status = parse_html_content(url)
+        titles.append(title)
+        contents.append(content)
+        summaries.append(summary)
         accessibility.append(accessibility_status)
         progress["processed"] += 1
     
-    # Add accessibility column to the DataFrame
+    # Add new columns to the DataFrame
+    df['Title'] = titles
+    df['Content'] = contents
+    df['Summary'] = summaries
     df['Accessibility'] = accessibility
     
     # Export the data to a .txt file
