@@ -59,6 +59,6 @@ def make_summary(text, ratio=0.1, max_sentences=10):
     summary_sentences = sorted(sorted_sentences[:num_sentences], key=lambda x: x[0])
 
     # Create the summary
-    summary = ' '.join([sentences[i] for i, _ in summary_sentences])
+    summary = ' '.join([sentences[i].replace('\n', ' ').replace('\n\n', ' ') for i, _ in summary_sentences])
 
     return summary
