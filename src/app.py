@@ -1,6 +1,5 @@
 from fastapi import FastAPI, UploadFile, File
-import pandas as pd
-from io import StringIO
+from .extractor import process_csv
 
 app = FastAPI()
 
@@ -12,13 +11,6 @@ def read_root():
 @app.post("/upload/")
 async def upload_csv(file: UploadFile = File(...)):
     contents = await file.read()
-    df = pd.read_csv(StringIO(contents.decode('utf-8')))
+    table = process_csv(contents)
     
-    # Visualize the data in a table
-    table = df.to_string()
-    
-    # Export the data to a .txt file
-    with open("exported_data.txt", "w") as txt_file:
-        txt_file.write(table)
-    
-    return {"message": "CSV uploaded and processed successfully"}
+    return {"message": "CSV uploaded and processed successfully", "table": table}
