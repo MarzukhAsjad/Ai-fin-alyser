@@ -14,6 +14,7 @@ import pandas as pd
 from io import StringIO
 import requests
 from bs4 import BeautifulSoup
+from .nlp_processor import make_summary
 
 progress = {"total": 0, "processed": 0}
 
@@ -37,10 +38,13 @@ def parse_html_content(url: str, idx: int):
         
         title, non_title_content = extract_content(soup)
         
-        # Export meaningful content to a .html file
+        # Generate summary using make_summary
+        summary = make_summary(non_title_content)
+        
+        # Export meaningful content and summary to a .html file
         html_filename = f"exported_html_{idx}.html"
         with open(html_filename, "w", encoding='utf-8') as html_file:
-            html_file.write(f"<h1>{title}</h1>\n{non_title_content}")
+            html_file.write(f"<h1>{title}</h1>\n{non_title_content}\n<h2>Summary</h2>\n<p>{summary}</p>")
         
         return "Accessible"
     except requests.exceptions.RequestException as e:

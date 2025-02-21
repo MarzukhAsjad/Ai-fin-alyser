@@ -1,23 +1,40 @@
-"""
-This module provides functionality for language processing using NLP techniques.
-Functions:
-    make_summary(content: str) -> str:
-        Abstract method to generate a summary of the given content.
-"""
+import random
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.probability import FreqDist
 
-from gensim import summarizer as summarize
+def make_summary(text):
+    num_sentences = text.count('.') + text.count('!') + text.count('?')
+    # Text into sentences
+    sentences = sent_tokenize(text)
 
-def make_summary(content: str) -> str:
-    """
-    Generate a summary of the given content using Gensim.
-    Args:
-        content (str): The content to summarize.
-    Returns:
-        str: The summary of the content.
-    """
-    try:
-        summary = summarize(content)
-        return summary
-    except ValueError as e:
-        return str(e)
+    # Text into words
+    words = word_tokenize(text.lower())
 
+    # Removing stop words
+    stop_words = set(stopwords.words("english"))
+    filtered_words = [word for word in words if word.casefold() not in stop_words]
+
+    # Calculate word frequencies
+    fdist = FreqDist(filtered_words)
+
+    # Assign scores to sentences based on word frequencies
+    sentence_scores = [sum(fdist[word] for word in word_tokenize(sentence.lower()) if word in fdist)
+                       for sentence in sentences]
+
+    # Create a list of tuples containing sentence index and score
+    sentence_scores = list(enumerate(sentence_scores))
+
+    # Sort sentences by scores in descending order
+    sorted_sentences = sorted(sentence_scores, key=lambda x: x[1], reverse=True)
+
+    # Randomly select the top `num_sentences` sentences for the summary
+    random_sentences = random.sample(sorted_sentences, num_sentences)
+
+    # Sort the randomly selected sentences based on their original order in the text
+    summary_sentences = sorted(random_sentences, key=lambda x: x[0])
+
+    # Create the summary
+    summary = ' '.join([sentences[i] for i, _ in summary_sentences])
+
+    return summary
