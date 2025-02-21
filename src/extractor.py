@@ -149,12 +149,11 @@ def process_csv_sync(contents: bytes):
             yield update
     return async_process()
 
-# Function to print the DataFrame to a .txt file
+# Function to print the DataFrame to a .csv file
 def print_data_to_file():
     global df_global
     if df_global is not None:
-        with open("printed_data.txt", "w", encoding="utf-8") as txt_file:
-            txt_file.write(df_global.to_string())
-        return "Data printed to printed_data.txt"
+        df_global.to_csv("printed_data.csv", index=False, encoding="utf-8")
+        return "Data printed to printed_data.csv"
     else:
         return "No data available to print"
