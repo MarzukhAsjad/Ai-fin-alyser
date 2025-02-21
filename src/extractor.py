@@ -16,6 +16,10 @@ import httpx
 from bs4 import BeautifulSoup
 from .nlp_processor import make_summary
 import asyncio
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 progress = {"total": 0, "processed": 0}
 df_global = None  # Global variable to store the DataFrame
@@ -31,8 +35,8 @@ def extract_content(soup):
     
     return title, content
 
-# Asynchronous function to parse the HTML content of a URL
-async def parse_html_content(url: str):
+# Asynchronous function to parse the HTML content of a URL and put the result in a queue
+async def parse_html_content(url: str, queue: asyncio.Queue):
     async with httpx.AsyncClient() as client:
         try:
             # Send a GET request to the URL
@@ -46,69 +50,104 @@ async def parse_html_content(url: str):
             # Generate summary using make_summary
             summary = make_summary(non_title_content)
             
-            return title, non_title_content, summary, "Accessible"
+            await queue.put((title, non_title_content, summary, "Accessible"))
         except httpx.RequestError as e:
             print(f"Error processing URL {url}: {e}")
-            return None, None, None, "Not Accessible"
+            await queue.put(("No Title", "", "", "Not Accessible"))
 
-# Asynchronous function to process a CSV file containing URLs
-async def process_csv(contents: bytes) -> str:
-    global progress, df_global
+# Asynchronous function to process a CSV file containing URLs and yield progress updates
+async def process_csv(contents: bytes):
+    global df_global
 
-    # Check if the contents are empty
-    if not contents:
-        print("Empty contents received")
-        return "Empty contents received"
-    
-    # Read the CSV file
-    df = pd.read_csv(StringIO(contents.decode('utf-8')))
-    
-    # Check if 'URL' column exists
-    if 'URL' not in df.columns:
-        print("No 'URL' column found in the CSV")
-        return "No 'URL' column found in the CSV"
-    
-    # Extract URLs from the DataFrame
-    urls = df['URL'].tolist()
-    progress["total"] = len(urls)
-    accessibility = []
-    titles = []
-    contents = []
-    summaries = []
-    
-    # Create tasks to process each URL
-    tasks = [parse_html_content(url) for url in urls]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-    
-    # Process results
-    for result in results:
-        if isinstance(result, Exception):
-            title, content, summary, accessibility_status = None, None, None, "Not Accessible"
-        else:
+    try:
+        # Check if the contents are empty
+        if not contents:
+            yield "Empty contents received\n"
+            return
+        
+        # Read the CSV file
+        df = pd.read_csv(StringIO(contents.decode('utf-8')))
+        
+        # Check if 'URL' column exists
+        if 'URL' not in df.columns:
+            yield "No 'URL' column found in the CSV\n"
+            return
+        
+        # Extract URLs from the DataFrame
+        urls = df['URL'].tolist()
+        total = len(urls)
+        processed = 0
+        accessibility = []
+        titles = []
+        contents = []
+        summaries = []
+        
+        # Create an asyncio.Queue to collect results
+        queue = asyncio.Queue()
+        
+        # Create tasks to process each URL
+        tasks = [parse_html_content(url, queue) for url in urls]
+        
+        # Process results as they are put in the queue
+        for task in asyncio.as_completed(tasks):
+            try:
+                await task
+                result = await queue.get()
+                title, content, summary, accessibility_status = result
+                titles.append(title)
+                contents.append(content)
+                summaries.append(summary)
+                accessibility.append(accessibility_status)
+            except Exception as e:
+                logging.error(f"Error during processing: {e}")
+                titles.append("No Title")
+                contents.append("")
+                summaries.append("")
+                accessibility.append("Not Accessible")
+            finally:
+                processed += 1
+                update_message = f"Processed {processed}/{total}\n"
+                logging.info(update_message)
+                yield update_message
+        
+        # Process any remaining items in the queue
+        while not queue.empty():
+            result = await queue.get()
             title, content, summary, accessibility_status = result
-        titles.append(title)
-        contents.append(content)
-        summaries.append(summary)
-        accessibility.append(accessibility_status)
-        progress["processed"] += 1
-    
-    # Add new columns to the DataFrame
-    df['Title'] = titles
-    df['Content'] = contents
-    df['Summary'] = summaries
-    df['Accessibility'] = accessibility
-    
-    # Reset progress to 0 after completion
-    progress = {"total": 0, "processed": 0}
-    
-    # Store the DataFrame in the global variable
-    df_global = df
-    
-    return df.to_string()
+            titles.append(title)
+            contents.append(content)
+            summaries.append(summary)
+            accessibility.append(accessibility_status)
+            processed += 1
+            update_message = f"Processed {processed}/{total}\n"
+            logging.info(update_message)
+            yield update_message
+        
+        # Add new columns to the DataFrame
+        df['Title'] = titles
+        df['Content'] = contents
+        df['Summary'] = summaries
+        df['Accessibility'] = accessibility
+        
+        # Store the DataFrame in the global variable
+        df_global = df
+        
+        completion_message = "Processing complete\n"
+        logging.info(completion_message)
+        yield completion_message
+    except asyncio.CancelledError:
+        logging.warning("Processing was cancelled")
+        yield "Processing was cancelled\n"
+    except Exception as e:
+        logging.error(f"Error during processing: {e}")
+        yield f"Error during processing: {e}\n"
 
 # Wrapper function to run the asynchronous process_csv function
-def process_csv_sync(contents: bytes) -> str:
-    return asyncio.run(process_csv(contents))
+def process_csv_sync(contents: bytes):
+    async def async_process():
+        async for update in process_csv(contents):
+            yield update
+    return async_process()
 
 # Function to print the DataFrame to a .txt file
 def print_data_to_file():
