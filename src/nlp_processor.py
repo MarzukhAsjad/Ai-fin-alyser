@@ -5,6 +5,7 @@ It includes functions for tokenizing text, removing stop words, calculating word
 and generating a summary based on sentence scores.
 Functions:
     make_summary(text, ratio=0.1, max_sentences=10): Generates a summary of the given text by selecting sentences based on word frequencies.
+    compare_corpora(corpus1, corpus2) -> float: Compares two corpora and returns the correlation value.
 TODO:
     - Replace nltk with a Large Language Model (LLM) for more advanced text processing and summarization.
     - Ensure the new implementation maintains or improves the performance and accuracy of the current summarization process.
@@ -26,7 +27,6 @@ CACHE_DIR = os.path.join(os.path.dirname(__file__), ".nltk_cache")
 
 # Initialize the corpus similarity module
 cs = Similarity(language="eng")
-
 
 # Ensure necessary NLTK resources are downloaded and stored in cache
 nltk.data.path.append(CACHE_DIR)
