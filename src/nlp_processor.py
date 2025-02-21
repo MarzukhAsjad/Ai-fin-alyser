@@ -4,7 +4,7 @@ This module provides functionality for summarizing text using Natural Language T
 It includes functions for tokenizing text, removing stop words, calculating word frequencies,
 and generating a summary based on sentence scores.
 Functions:
-    make_summary(text, ratio=0.1): Generates a summary of the given text by selecting sentences based on word frequencies.
+    make_summary(text, ratio=0.1, max_sentences=5): Generates a summary of the given text by selecting sentences based on word frequencies.
 TODO:
     - Replace nltk with a Large Language Model (LLM) for more advanced text processing and summarization.
     - Ensure the new implementation maintains or improves the performance and accuracy of the current summarization process.
@@ -26,9 +26,14 @@ nltk.data.path.append(CACHE_DIR)
 nltk.download('punkt', download_dir=CACHE_DIR)
 nltk.download('stopwords', download_dir=CACHE_DIR)
 
-def make_summary(text, ratio=0.1):
+def make_summary(text, ratio=0.1, max_sentences=5):
     sentences = sent_tokenize(text)
     num_sentences = max(1, int(len(sentences) * ratio))
+
+    # Ensure the number of sentences does not exceed the maximum
+    while num_sentences > max_sentences and ratio > 0:
+        ratio -= 0.01
+        num_sentences = max(1, int(len(sentences) * ratio))
 
     # Text into words
     words = word_tokenize(text.lower())
