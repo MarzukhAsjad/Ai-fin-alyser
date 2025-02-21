@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
+import pandas as pd
+from io import StringIO
 
 app = FastAPI()
 
@@ -6,6 +8,17 @@ app = FastAPI()
 def read_root():
     return {"Hello": "World"}
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str = None):
-    return {"item_id": item_id, "q": q}
+# This endpoint will be used to upload CSV files
+@app.post("/upload/")
+async def upload_csv(file: UploadFile = File(...)):
+    contents = await file.read()
+    df = pd.read_csv(StringIO(contents.decode('utf-8')))
+    
+    # Visualize the data in a table
+    table = df.to_string()
+    
+    # Export the data to a .txt file
+    with open("exported_data.txt", "w") as txt_file:
+        txt_file.write(table)
+    
+    return {"message": "CSV uploaded and processed successfully"}
