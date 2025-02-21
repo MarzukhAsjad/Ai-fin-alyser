@@ -1,12 +1,21 @@
 import random
+import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.probability import FreqDist
+import os
+
+# Define cache directory
+CACHE_DIR = os.path.join(os.path.dirname(__file__), ".nltk_cache")
+
+# Ensure necessary NLTK resources are downloaded and stored in cache
+nltk.data.path.append(CACHE_DIR)
+nltk.download('punkt', download_dir=CACHE_DIR)
+nltk.download('stopwords', download_dir=CACHE_DIR)
 
 def make_summary(text):
-    num_sentences = text.count('.') + text.count('!') + text.count('?')
-    # Text into sentences
     sentences = sent_tokenize(text)
+    num_sentences = min(len(sentences), text.count('.') + text.count('!') + text.count('?'))
 
     # Text into words
     words = word_tokenize(text.lower())
@@ -29,7 +38,7 @@ def make_summary(text):
     sorted_sentences = sorted(sentence_scores, key=lambda x: x[1], reverse=True)
 
     # Randomly select the top `num_sentences` sentences for the summary
-    random_sentences = random.sample(sorted_sentences, num_sentences)
+    random_sentences = random.sample(sorted_sentences, min(num_sentences, len(sorted_sentences)))
 
     # Sort the randomly selected sentences based on their original order in the text
     summary_sentences = sorted(random_sentences, key=lambda x: x[0])
