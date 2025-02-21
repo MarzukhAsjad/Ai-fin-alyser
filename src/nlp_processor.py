@@ -1,3 +1,16 @@
+"""
+nlp_processor.py
+This module provides functionality for summarizing text using Natural Language Toolkit (nltk).
+It includes functions for tokenizing text, removing stop words, calculating word frequencies,
+and generating a summary based on sentence scores.
+Functions:
+    make_summary(text): Generates a summary of the given text by selecting sentences based on word frequencies.
+TODO:
+    - Replace nltk with a Large Language Model (LLM) for more advanced text processing and summarization.
+    - Ensure the new implementation maintains or improves the performance and accuracy of the current summarization process.
+    - Update the cache management to handle any new dependencies introduced by the LLM.
+"""
+
 import random
 import nltk
 from nltk.corpus import stopwords

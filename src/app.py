@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File
-from .extractor import process_csv, progress
+from fastapi.responses import JSONResponse
+from .extractor import process_csv_sync, progress
 import threading
 
 app = FastAPI()
@@ -9,7 +10,7 @@ def read_root():
     return {"Hello": "World"}
 
 def process_csv_in_thread(contents: bytes):
-    process_csv(contents)
+    process_csv_sync(contents)
 
 # This endpoint will be used to upload CSV files
 @app.post("/upload/")

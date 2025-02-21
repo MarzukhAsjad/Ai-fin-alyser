@@ -12,9 +12,10 @@ Functions:
 """
 import pandas as pd
 from io import StringIO
-import requests
+import httpx
 from bs4 import BeautifulSoup
 from .nlp_processor import make_summary
+import asyncio
 
 progress = {"total": 0, "processed": 0}
 
@@ -29,42 +30,38 @@ def extract_content(soup):
     
     return title, content
 
-# Function to parse the HTML content of a URL
-def parse_html_content(url: str):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.content, 'html.parser')
-        
-        title, non_title_content = extract_content(soup)
-        
-        # Generate summary using make_summary
-        summary = make_summary(non_title_content)
-        
-        return title, non_title_content, summary, "Accessible"
-    except requests.exceptions.RequestException as e:
-        print(f"Error processing URL {url}: {e}")
-        return None, None, None, "Not Accessible"
+# Asynchronous function to parse the HTML content of a URL
+async def parse_html_content(url: str):
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            title, non_title_content = extract_content(soup)
+            
+            # Generate summary using make_summary
+            summary = make_summary(non_title_content)
+            
+            return title, non_title_content, summary, "Accessible"
+        except httpx.RequestError as e:
+            print(f"Error processing URL {url}: {e}")
+            return None, None, None, "Not Accessible"
 
-# Function to process a CSV file containing URLs
-def process_csv(contents: bytes) -> str:
-    # The progress dictionary will be used to track the files processed
+# Asynchronous function to process a CSV file containing URLs
+async def process_csv(contents: bytes) -> str:
     global progress
 
-    # Check if the contents are empty
     if not contents:
         print("Empty contents received")
         return "Empty contents received"
     
-    # Read the CSV file
     df = pd.read_csv(StringIO(contents.decode('utf-8')))
     
-    # Extract URLs from the DataFrame
     if 'URL' not in df.columns:
         print("No 'URL' column found in the CSV")
         return "No 'URL' column found in the CSV"
     
-    # Convert the 'URL' column to a list
     urls = df['URL'].tolist()
     progress["total"] = len(urls)
     accessibility = []
@@ -72,27 +69,32 @@ def process_csv(contents: bytes) -> str:
     contents = []
     summaries = []
     
-    # Process each URL by calling the parse_html_content function
-    for idx, url in enumerate(urls):
-        print(f"Processing URL: {url}")
-        title, content, summary, accessibility_status = parse_html_content(url)
+    tasks = [parse_html_content(url) for url in urls]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    for result in results:
+        if isinstance(result, Exception):
+            title, content, summary, accessibility_status = None, None, None, "Not Accessible"
+        else:
+            title, content, summary, accessibility_status = result
         titles.append(title)
         contents.append(content)
         summaries.append(summary)
         accessibility.append(accessibility_status)
         progress["processed"] += 1
     
-    # Add new columns to the DataFrame
     df['Title'] = titles
     df['Content'] = contents
     df['Summary'] = summaries
     df['Accessibility'] = accessibility
     
-    # Export the data to a .txt file
-    with open("exported_data.txt", "w") as txt_file:
+    with open("exported_data.txt", "w", encoding="utf-8") as txt_file:
         txt_file.write(df.to_string())
     
-    # Reset progress to 0 after completion
     progress = {"total": 0, "processed": 0}
     
     return df.to_string()
+
+# Wrapper function to run the asynchronous process_csv function
+def process_csv_sync(contents: bytes) -> str:
+    return asyncio.run(process_csv(contents))
