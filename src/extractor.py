@@ -131,7 +131,7 @@ async def process_csv(contents: bytes, ratio=0.1, max_sentences=10):
         yield f"Error during processing: {e}\n"
 
 # Wrapper function to run the asynchronous process_csv function
-def process_csv_sync(contents: bytes, ratio=0.1, max_sentences=5):
+def process_csv_sync(contents: bytes, ratio=0.1, max_sentences=10):
     async def async_process():
         async for update in process_csv(contents, ratio, max_sentences):
             yield update
