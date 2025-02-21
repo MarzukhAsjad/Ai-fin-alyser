@@ -34,10 +34,12 @@ def extract_content(soup):
 async def parse_html_content(url: str):
     async with httpx.AsyncClient() as client:
         try:
+            # Send a GET request to the URL
             response = await client.get(url)
             response.raise_for_status()
             soup = BeautifulSoup(response.content, 'html.parser')
             
+            # Extract title and content
             title, non_title_content = extract_content(soup)
             
             # Generate summary using make_summary
@@ -52,16 +54,20 @@ async def parse_html_content(url: str):
 async def process_csv(contents: bytes) -> str:
     global progress
 
+    # Check if the contents are empty
     if not contents:
         print("Empty contents received")
         return "Empty contents received"
     
+    # Read the CSV file
     df = pd.read_csv(StringIO(contents.decode('utf-8')))
     
+    # Check if 'URL' column exists
     if 'URL' not in df.columns:
         print("No 'URL' column found in the CSV")
         return "No 'URL' column found in the CSV"
     
+    # Extract URLs from the DataFrame
     urls = df['URL'].tolist()
     progress["total"] = len(urls)
     accessibility = []
@@ -69,9 +75,11 @@ async def process_csv(contents: bytes) -> str:
     contents = []
     summaries = []
     
+    # Create tasks to process each URL
     tasks = [parse_html_content(url) for url in urls]
     results = await asyncio.gather(*tasks, return_exceptions=True)
     
+    # Process results
     for result in results:
         if isinstance(result, Exception):
             title, content, summary, accessibility_status = None, None, None, "Not Accessible"
@@ -83,18 +91,34 @@ async def process_csv(contents: bytes) -> str:
         accessibility.append(accessibility_status)
         progress["processed"] += 1
     
+    # Add new columns to the DataFrame
     df['Title'] = titles
     df['Content'] = contents
     df['Summary'] = summaries
     df['Accessibility'] = accessibility
     
+    # Export the data to a .txt file
     with open("exported_data.txt", "w", encoding="utf-8") as txt_file:
         txt_file.write(df.to_string())
     
+    # Reset progress to 0 after completion
     progress = {"total": 0, "processed": 0}
+    
+    global df_global
+    df_global = df
     
     return df.to_string()
 
 # Wrapper function to run the asynchronous process_csv function
 def process_csv_sync(contents: bytes) -> str:
     return asyncio.run(process_csv(contents))
+
+# Function to print the DataFrame to a .txt file
+def print_data_to_file():
+    global df_global
+    if df_global is not None:
+        with open("printed_data.txt", "w", encoding="utf-8") as txt_file:
+            txt_file.write(df_global.to_string())
+        return "Data printed to printed_data.txt"
+    else:
+        return "No data available to print"

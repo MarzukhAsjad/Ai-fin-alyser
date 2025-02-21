@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
-from .extractor import process_csv_sync, progress
+from .extractor import process_csv_sync, progress, print_data_to_file
 import threading
 
 app = FastAPI()
@@ -9,10 +9,11 @@ app = FastAPI()
 def read_root():
     return {"Hello": "World"}
 
+# Function to process CSV in a separate thread
 def process_csv_in_thread(contents: bytes):
     process_csv_sync(contents)
 
-# This endpoint will be used to upload CSV files
+# Endpoint to upload CSV files
 @app.post("/upload/")
 async def upload_csv(file: UploadFile = File(...)):
     try:
@@ -30,7 +31,13 @@ async def upload_csv(file: UploadFile = File(...)):
     except Exception as e:
         return {"error": str(e)}
 
-# This endpoint will be used to get the progress of the CSV processing
+# Endpoint to get the progress of the CSV processing
 @app.get("/progress/")
 def get_progress():
     return progress
+
+# Endpoint to print the DataFrame to a .txt file
+@app.get("/print-data/")
+def print_data():
+    result = print_data_to_file()
+    return {"message": result}
