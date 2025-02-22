@@ -91,7 +91,6 @@ def compare_corpora(corpus1, corpus2) -> float:
         temp2_path = temp2.name
 
     result = cs.calculate(temp1_path, temp2_path)
-    print(f"Correlation between corpus1 and corpus2: {result}")
 
     # Clean up temporary files
     os.remove(temp1_path)
