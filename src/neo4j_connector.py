@@ -62,7 +62,6 @@ class Neo4jConnector:
         try:
             result = tx.run(query, corpus_id1=corpus_id1, corpus_id2=corpus_id2, correlation=correlation)
             record = result.single()
-            print(f"DEBUG: Created relationship between corpus {corpus_id1} and {corpus_id2} with correlation: {correlation}")
             return record
         except Exception as e:
             print(f"ERROR in _create_and_return_relationship: {e} for parameters corpus_id1={corpus_id1}, corpus_id2={corpus_id2}, correlation={correlation}")
