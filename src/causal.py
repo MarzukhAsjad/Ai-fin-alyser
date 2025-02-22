@@ -39,3 +39,38 @@ def store_correlation_scores():
     
     connector.close()
 
+# Wrapper function to query by title
+def query_corpus_by_title(title: str):
+    connector = Neo4jConnector()
+    result = connector.query_by_title(title)
+    connector.close()
+    return result
+
+# Wrapper function to query all correlations
+def query_all_correlations():
+    connector = Neo4jConnector()
+    result = connector.query_all_correlations()
+    connector.close()
+    return result
+
+# Wrapper function to query the pairwise highest correlations per corpus
+def query_pairwise_causal():
+    connector = Neo4jConnector()
+    result = connector.query_pairwise_causal()
+    connector.close()
+    return result
+
+# Wrapper function to query the top N highest correlation relationships
+def query_highest_correlation(n: int = 1):
+    connector = Neo4jConnector()
+    result = connector.query_highest_correlation(n)
+    connector.close()
+    return result
+
+# Wrapper function to clear the correlations database
+def clear_correlation_database():
+    connector = Neo4jConnector()
+    connector.clear_database()
+    connector.close()
+    return "Database cleared."
+
