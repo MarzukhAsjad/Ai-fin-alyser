@@ -3,8 +3,8 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from .extractor import process_csv_sync, print_data_to_file
-from .causal import (read_csv_extract_corpora, store_correlation_scores,
+from .services.extractor import process_csv_sync, print_data_to_file
+from .services.causal import (read_csv_extract_corpora, store_correlation_scores,
                      query_corpus_by_title, query_all_correlations, 
                      query_pairwise_causal, query_highest_correlation,
                      clear_correlation_database, test_db_connection)

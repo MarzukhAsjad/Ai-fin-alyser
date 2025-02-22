@@ -14,7 +14,7 @@ import pandas as pd
 from io import StringIO
 import httpx
 from bs4 import BeautifulSoup
-from .nlp_processor import make_summary
+from ..utils.nlp_processor import make_summary
 import asyncio
 import logging
 
