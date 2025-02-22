@@ -21,6 +21,8 @@ from nltk.probability import FreqDist
 from corpus_similarity import Similarity
 
 import os
+import tempfile
+import logging
 
 # Define cache directory
 CACHE_DIR = os.path.join(os.path.dirname(__file__), ".nltk_cache")
@@ -72,6 +74,26 @@ def make_summary(text, ratio=0.1, max_sentences=10):
 
 # Add a function to compare two corpora and return the correlation value
 def compare_corpora(corpus1, corpus2) -> float:
-    result = cs.calculate(corpus1, corpus2)
+    # Ensure both corpus inputs are strings
+    if not isinstance(corpus1, str):
+        corpus1 = str(corpus1)
+    if not isinstance(corpus2, str):
+        corpus2 = str(corpus2)
+
+    logging.info(f"Comparing corpora: {corpus1[:100]}... and {corpus2[:100]}...")
+    logging.info(f"Type of corpus1: {type(corpus1)}, Type of corpus2: {type(corpus2)}")
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as temp1, tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as temp2:
+        temp1.write(corpus1.encode('utf-8'))
+        temp2.write(corpus2.encode('utf-8'))
+        temp1_path = temp1.name
+        temp2_path = temp2.name
+
+    result = cs.calculate(temp1_path, temp2_path)
     print(f"Correlation between corpus1 and corpus2: {result}")
+
+    # Clean up temporary files
+    os.remove(temp1_path)
+    os.remove(temp2_path)
+
     return result
