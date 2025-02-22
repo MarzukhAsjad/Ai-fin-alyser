@@ -173,7 +173,7 @@ def show_correlations():
         if result and result.get('result'):
             st.subheader("Correlation Network Visualization")
             image_buf = create_correlation_network(result['result'])
-            st.image(image_buf, caption="Correlation Network", use_column_width=True)
+            st.image(image_buf, caption="Correlation Network", use_container_width=True)
     
     st.subheader("Highest Correlations")
     limit = st.number_input("Number of top correlations", min_value=1, value=1)
@@ -236,7 +236,7 @@ def show_clustering():
                 try:
                     image = Image.open(BytesIO(response.content))
                     logger.debug(f"Successfully loaded image: {image.format}, size: {image.size}")
-                    st.image(image, caption="Hierarchical Clustering Results", use_column_width=True)
+                    st.image(image, caption="Hierarchical Clustering Results", use_container_width=True)
                 except Exception as e:
                     logger.error(f"Error processing image: {e}")
                     st.error(f"Failed to process image: {e}")
