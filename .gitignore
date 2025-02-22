@@ -6,3 +6,4 @@ __pycache__/
 # In the future, this cache can be stored in the cloud or GitHub for faster retrieval and to avoid cluttering the project directory.
 .nltk_cache/ 
 *.csv
+.env
