@@ -59,7 +59,7 @@ def calculate_correlation(request: Request):
     # Ensure the file path is correctly referenced
     file_path = os.path.join(os.path.dirname(__file__), "..", "..", "printed_data.csv")
     print("File path:", file_path)
-    read_csv_extract_corpora(file_path, extract_titles=True, extract_summaries=True)
+    read_csv_extract_corpora(file_path)
     store_correlation_scores("bolt://localhost:7687", "neo4j", "password")
     return {"message": "Correlation calculation completed and ready for querying."}
 
