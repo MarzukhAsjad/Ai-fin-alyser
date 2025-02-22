@@ -1,12 +1,24 @@
 from neo4j import GraphDatabase
+import os
+from dotenv import load_dotenv
 
-# TODO: Set up authentication for the Neo4j database to be extracted from environment variables
+# Load environment variables from .env file
+load_dotenv()
+
 class Neo4jConnector:
-    def __init__(self, uri, user, password):
+    def __init__(self):
+        uri = os.getenv("NEO4J_URI")
+        user = os.getenv("NEO4J_USER")
+        password = os.getenv("NEO4J_PASSWORD")
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
 
     def close(self):
         self.driver.close()
+
+    def test_connection(self):
+        with self.driver.session() as session:
+            result = session.run("RETURN 1")
+            return result.single()[0] == 1
 
     def create_corpus_node(self, corpus_id, title, text):
         with self.driver.session() as session:

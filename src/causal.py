@@ -14,8 +14,8 @@ def read_csv_extract_corpora(file_path: str):
     corpus = df['Summary'].tolist()
 
 # Store correlation scores between all pairs of corpora in the Neo4j database
-def store_correlation_scores(neo4j_uri: str, neo4j_user: str, neo4j_password: str):
-    connector = Neo4jConnector(neo4j_uri, neo4j_user, neo4j_password)
+def store_correlation_scores():
+    connector = Neo4jConnector()
 
     if corpus is None or titles is None:
         raise ValueError("Corpus or titles not initialized. Please call read_csv_extract_corpora() first.")
