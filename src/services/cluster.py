@@ -1,8 +1,13 @@
 import numpy as np
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
+import matplotlib
+matplotlib.use('Agg')  # Set backend to non-interactive Agg
 import matplotlib.pyplot as plt
 from src.services.causal import query_all_correlations
 import math
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Convert correlations into distances
 def convert_to_distance_matrix(json_data):
@@ -34,7 +39,7 @@ def perform_hierarchical_clustering(distance_matrix):
     return Z
 
 # Visualize results with a dendrogram
-def visualize_dendrogram(Z, output_path="dendrogram.png"):
+def visualize_dendrogram(Z, output_path="hierarchical_clustering.png"):
     plt.figure(figsize=(10, 7))
     dendrogram(Z)
     plt.title("Hierarchical Clustering Dendrogram")
@@ -71,23 +76,42 @@ def sanitize_correlation(result):
 
 # Main function to run all steps
 def run_hierarchical_clustering():
-    # Query data
-    json_data = sanitize_correlation(query_all_correlations())
+    try:
+        # Query data
+        json_data = sanitize_correlation(query_all_correlations())
 
-    # Convert correlations to distances
-    distance_matrix = convert_to_distance_matrix(json_data)
+        # Convert correlations to distances
+        distance_matrix = convert_to_distance_matrix(json_data)
 
-    # Perform hierarchical clustering
-    Z = perform_hierarchical_clustering(distance_matrix)
+        # Perform hierarchical clustering
+        Z = perform_hierarchical_clustering(distance_matrix)
 
-    # Visualize dendrogram
-    visualize_dendrogram(Z)
+        # Extract clusters (adjust threshold or number of clusters as needed)
+        threshold = 1.0   # Example threshold for cutting the dendrogram
+        labels = extract_clusters(Z, threshold=threshold)
+        
+        # Create the plot using the non-interactive backend
+        plt.switch_backend('Agg')
+        fig = plt.figure(figsize=(10, 7))
+        
+        # Create dendrogram
+        dendrogram(Z)
+        
+        plt.title('Hierarchical Clustering Dendrogram')
+        plt.xlabel('Distance')
+        
+        # Save the plot
+        output_path = "hierarchical_clustering.png"
+        plt.savefig(output_path)
+        plt.close()  # Close the figure to free memory
+        
+        logger.info(f"Clustering image saved to: {output_path}")
+        logger.debug(f"Cluster Labels: {labels}")
+        print("Cluster Labels:", labels)
 
-    # Extract clusters (adjust threshold or number of clusters as needed)
-    threshold = 1.0   # Example threshold for cutting the dendrogram
-    labels = extract_clusters(Z, threshold=threshold)
-    
-    print("Cluster Labels:", labels)
-
-    return {"Cluster Labels": labels}
+        return {"Cluster Labels": labels.tolist()}  # Convert numpy array to list
+        
+    except Exception as e:
+        logger.error(f"Error in hierarchical clustering: {e}")
+        raise
 
