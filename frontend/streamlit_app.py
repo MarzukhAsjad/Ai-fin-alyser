@@ -5,9 +5,14 @@ import json
 import threading
 from queue import Queue
 from contextlib import contextmanager
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv()
 
 # Constants
-API_BASE_URL = "http://localhost:8000"  # Adjust if your FastAPI server runs on a different port
+API_BASE_URL = os.getenv("API_BASE_URL")
 
 def make_async_request(queue, request_func, *args, **kwargs):
     try:
