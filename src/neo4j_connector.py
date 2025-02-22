@@ -42,9 +42,9 @@ class Neo4jConnector:
         with self.driver.session() as session:
             return session.execute_read(self._query_pairwise_causal)
 
-    def query_highest_correlation(self, n = 1):
+    def query_highest_correlation(self, n: int = 1):
         with self.driver.session() as session:
-            result = session.execute_read(self._query_highest_correlation, n)
+            result = session.execute_read(self._query_highest_correlation, int(n))
             return result
 
     def clear_database(self):
@@ -106,12 +106,12 @@ class Neo4jConnector:
         return [record.data() for record in result]
 
     @staticmethod
-    def _query_highest_correlation(tx, n: int = 1):
+    def _query_highest_correlation(tx, n: int):
         query = (
-            "MATCH (c:Corpus)-[r:CORRELATED]->(other:Corpus) " 
-            "WITH c, r, other ORDER BY r.correlation DESC " 
-            "WITH c, collect({otherTitle: other.title, correlation: r.correlation}) AS correlations " 
-            "RETURN c.title AS corpusTitle, correlations[0..$n] AS topCorrelations"
+            "MATCH (c1:Corpus)-[r:CORRELATED]->(c2:Corpus) "
+            "RETURN c1.title AS corpus1, c2.title AS corpus2, r.correlation AS correlation "
+            "ORDER BY r.correlation DESC "
+            "LIMIT $n"
         )
         result = tx.run(query, n=n)
         return [record.data() for record in result]

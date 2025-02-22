@@ -113,12 +113,12 @@ def get_pairwise_causal(request: Request):
     connector.close()
     return {"result": result}
 
-# Endpoint to query the top N causal relationships
+# Endpoint to query the top N pairwise relationships
 @app.get("/query-highest-correlation/")
 @limiter.limit("5/second")
-def get_highest_correlation(request: Request, n = 1):
+def get_highest_correlation(request: Request, limit = 1):
     connector = Neo4jConnector()
-    result = connector.query_highest_correlation(n)
+    result = connector.query_highest_correlation(limit)
     connector.close()
     return {"result": result}
 
@@ -130,14 +130,3 @@ def clear_database(request: Request):
     connector.clear_database()
     connector.close()
     return {"message": "Database cleared."}
-
-# This query will test the compare_corpora function from the nlp_processor module
-@app.get("/test-compare-corpora/")
-@limiter.limit("1/second")
-def test_compare_corpora(request: Request):
-    corpus1 = "This is a test corpus for comparison."
-    corpus2 = "This is another test corpus for comparison."
-    result = compare_corpora(corpus1, corpus2)
-    return {"correlation": result}
-# The queries will be: pairwise causal relationship, top N causal relationships, and all causal relationships
-# The results will be returned as JSON responses
