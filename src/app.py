@@ -6,6 +6,7 @@ from slowapi.errors import RateLimitExceeded
 from .extractor import process_csv_sync, print_data_to_file
 from .causal import read_csv_extract_corpora, store_correlation_scores
 from .neo4j_connector import Neo4jConnector
+from .nlp_processor import compare_corpora
 import logging
 import os
 
@@ -81,6 +82,25 @@ def test_connection(request: Request):
     connector.close()
     return {"connection_successful": success}
 
+# Endpoint to query all the correlations in the database
+@app.get("/query-all-correlations/")
+@limiter.limit("5/second")
+def query_all_correlations(request: Request):
+    connector = Neo4jConnector()
+    result = connector.query_all_correlations()
+    connector.close()
+    return {"result": result}
+
 # TODO: Add an endpoint to query the Neo4j database for correlation values
+
+
+# This query will test the compare_corpora function from the nlp_processor module
+@app.get("/test-compare-corpora/")
+@limiter.limit("1/second")
+def test_compare_corpora(request: Request):
+    corpus1 = "This is a test corpus for comparison."
+    corpus2 = "This is another test corpus for comparison."
+    result = compare_corpora(corpus1, corpus2)
+    return {"correlation": result}
 # The queries will be: pairwise causal relationship, top N causal relationships, and all causal relationships
 # The results will be returned as JSON responses

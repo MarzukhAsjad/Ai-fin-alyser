@@ -33,6 +33,11 @@ class Neo4jConnector:
             result = session.execute_read(self._query_by_title, title)
             return result
 
+    def query_all_correlations(self):
+        with self.driver.session() as session:
+            result = session.execute_read(self._query_all_correlations)
+            return result
+
     @staticmethod
     def _create_and_return_corpus(tx, corpus_id, title, text):
         query = (
@@ -60,3 +65,12 @@ class Neo4jConnector:
         )
         result = tx.run(query, title=title)
         return [record["c"] for record in result]
+
+    @staticmethod
+    def _query_all_correlations(tx):
+        query = (
+            "MATCH (c1:Corpus)-[r:CORRELATED]->(c2:Corpus) "
+            "RETURN c1.id AS id1, c1.title AS title1, c2.id AS id2, c2.title AS title2, r.correlation AS correlation"
+        )
+        result = tx.run(query)
+        return [record.data() for record in result]

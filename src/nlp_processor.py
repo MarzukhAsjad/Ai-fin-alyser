@@ -83,6 +83,7 @@ def compare_corpora(corpus1, corpus2) -> float:
     logging.info(f"Comparing corpora: {corpus1[:100]}... and {corpus2[:100]}...")
     logging.info(f"Type of corpus1: {type(corpus1)}, Type of corpus2: {type(corpus2)}")
 
+    # Write the corpora to temporary files to ensure compatibility with the corpus similarity module
     with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as temp1, tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as temp2:
         temp1.write(corpus1.encode('utf-8'))
         temp2.write(corpus2.encode('utf-8'))
