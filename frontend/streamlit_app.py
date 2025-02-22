@@ -7,6 +7,12 @@ from queue import Queue
 from contextlib import contextmanager
 from dotenv import load_dotenv
 import os
+from io import BytesIO
+from PIL import Image
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -70,7 +76,7 @@ def main():
     # Sidebar navigation
     page = st.sidebar.selectbox(
         "Choose a function",
-        ["Home", "Upload Data", "View Data", "Correlations", "Database Operations"]
+        ["Home", "Upload Data", "View Data", "Correlations", "Database Operations", "Clustering"]
     )
 
     if page == "Home":
@@ -83,6 +89,8 @@ def main():
         show_correlations()
     elif page == "Database Operations":
         show_database_operations()
+    elif page == "Clustering":
+        show_clustering()
 
 def show_home():
     st.header("Welcome to Financial Data Analyzer")
@@ -187,6 +195,51 @@ def show_database_operations():
             )
             if result:
                 st.write(result)
+
+def show_clustering():
+    st.header("Hierarchical Clustering Analysis")
+    
+    # Initialize session state
+    if 'clustering_completed' not in st.session_state:
+        st.session_state.clustering_completed = False
+    
+    col1, col2 = st.columns(2)
+    
+    # Run clustering button
+    if col1.button("Run Hierarchical Clustering"):
+        result = async_api_call(
+            requests.get,
+            f"{API_BASE_URL}/run-hierarchical-clustering/",
+            loading_text="Running hierarchical clustering..."
+        )
+        if result and result.get("message") == "Hierarchical clustering completed.":
+            st.success("Clustering completed successfully!")
+            st.session_state.clustering_completed = True
+        else:
+            st.error("Clustering failed")
+            st.session_state.clustering_completed = False
+    
+    # View results button
+    if col2.button("View Clustering Results", disabled=not st.session_state.clustering_completed):
+        with st.spinner("Loading clustering visualization..."):
+            logger.debug(f"Requesting clustering image from: {API_BASE_URL}/download-hierarchical-clustering-image/")
+            response = requests.get(f"{API_BASE_URL}/download-hierarchical-clustering-image/")
+            
+            logger.debug(f"Image response status code: {response.status_code}")
+            logger.debug(f"Image response headers: {response.headers}")
+            
+            if response.status_code == 200:
+                try:
+                    image = Image.open(BytesIO(response.content))
+                    logger.debug(f"Successfully loaded image: {image.format}, size: {image.size}")
+                    st.image(image, caption="Hierarchical Clustering Results", use_column_width=True)
+                except Exception as e:
+                    logger.error(f"Error processing image: {e}")
+                    st.error(f"Failed to process image: {e}")
+            else:
+                error_message = response.json() if response.headers.get('content-type') == 'application/json' else response.text
+                logger.error(f"Failed to load clustering visualization: {error_message}")
+                st.error(f"Failed to load clustering visualization: {error_message}")
 
 if __name__ == "__main__":
     main()
