@@ -62,7 +62,7 @@ async def process_csv(contents: bytes, ratio=0.1, max_sentences=10):
     try:
         # Check if the contents are empty
         if not contents:
-            yield "Empty contents received\n"
+            yield '{"status": "error", "message": "Empty contents received"}\n'
             return
         
         # Read the CSV file
@@ -70,7 +70,7 @@ async def process_csv(contents: bytes, ratio=0.1, max_sentences=10):
         
         # Check if 'URL' column exists
         if 'URL' not in df.columns:
-            yield "No 'URL' column found in the CSV\n"
+            yield '{"status": "error", "message": "No URL column found in the CSV"}\n'
             return
         
         # Extract URLs from the DataFrame
@@ -105,7 +105,7 @@ async def process_csv(contents: bytes, ratio=0.1, max_sentences=10):
                 logging.error(f"Error during processing task: {e}")
             finally:
                 processed += 1
-                update_message = f"Processed {processed}/{total} (Errors: {error_processed})\n"
+                update_message = f'{{"status": "processing", "total": {total}, "processed": {processed}, "errors": {error_processed}}}\n'
                 logging.info(update_message)
                 yield update_message
         
@@ -118,15 +118,15 @@ async def process_csv(contents: bytes, ratio=0.1, max_sentences=10):
         # Store the DataFrame in the global variable
         df_global = df
         
-        completion_message = "Processing complete\n"
+        completion_message = '{"status": "complete", "message": "Processing complete", "total": ' + str(total) + ', "processed": ' + str(processed) + ', "errors": ' + str(error_processed) + '}\n'
         logging.info(completion_message)
         yield completion_message
     except asyncio.CancelledError:
-        logging.warning("Processing was cancelled")
-        yield "Processing was cancelled\n"
+        yield '{"status": "cancelled", "message": "Processing was cancelled"}\n'
     except Exception as e:
-        logging.error(f"Error during processing: {e}")
-        yield f"Error during processing: {e}\n"
+        error_message = f'{{"status": "error", "message": "Error during processing: {str(e)}"}}\n'
+        logging.error(error_message)
+        yield error_message
 
 # Wrapper function to run the asynchronous process_csv function
 def process_csv_sync(contents: bytes, ratio=0.1, max_sentences=10):
