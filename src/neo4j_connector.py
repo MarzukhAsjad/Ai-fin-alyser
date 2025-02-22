@@ -38,6 +38,10 @@ class Neo4jConnector:
             result = session.execute_read(self._query_all_correlations)
             return result
 
+    def clear_database(self):
+        with self.driver.session() as session:
+            session.execute_write(self._clear_database)
+
     @staticmethod
     def _create_and_return_corpus(tx, corpus_id, title, text):
         query = (
@@ -74,3 +78,8 @@ class Neo4jConnector:
         )
         result = tx.run(query)
         return [record.data() for record in result]
+
+    @staticmethod
+    def _clear_database(tx):
+        query = "MATCH (n) DETACH DELETE n"
+        tx.run(query)

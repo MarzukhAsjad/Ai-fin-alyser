@@ -92,7 +92,14 @@ def query_all_correlations(request: Request):
     return {"result": result}
 
 # TODO: Add an endpoint to query the Neo4j database for correlation values
-
+# This endpoint will clear all data in the Neo4j database
+@app.delete("/clear-database/")
+@limiter.limit("1/second")
+def clear_database(request: Request):
+    connector = Neo4jConnector()
+    connector.clear_database()
+    connector.close()
+    return {"message": "Database cleared."}
 
 # This query will test the compare_corpora function from the nlp_processor module
 @app.get("/test-compare-corpora/")
