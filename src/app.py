@@ -8,6 +8,7 @@ from .services.causal import (read_csv_extract_corpora, store_correlation_scores
                      query_corpus_by_title, query_all_correlations, 
                      query_pairwise_causal, query_highest_correlation,
                      clear_correlation_database, test_db_connection)
+from .services.cluster import run_hierarchical_clustering
 import logging
 import math
 
@@ -109,3 +110,14 @@ def clear_database(request: Request):
 def test_connection(request: Request):
     success = test_db_connection()
     return {"connection_successful": success}
+
+########################################
+###### Cluster Analysis Endpoints ######
+########################################
+
+# Endpoint to run hierarchical clustering
+@app.get("/run-hierarchical-clustering/")
+@limiter.limit("3/second")
+def hierarchical_clustering_endpoint(request: Request):
+    run_hierarchical_clustering()
+    return {"message": "Hierarchical clustering completed."}

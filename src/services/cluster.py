@@ -89,3 +89,5 @@ def run_hierarchical_clustering():
     
     print("Cluster Labels:", labels)
 
+    return {"Cluster Labels": labels}
+
