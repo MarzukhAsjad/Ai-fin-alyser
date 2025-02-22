@@ -57,20 +57,29 @@ def print_data(request: Request):
 @limiter.limit("3/second")
 def calculate_correlation(request: Request):
     # Ensure the file path is correctly referenced
-    file_path = os.path.join(os.path.dirname(__file__), "..", "..", "printed_data.csv")
+    file_path = "printed_data.csv"
     print("File path:", file_path)
     read_csv_extract_corpora(file_path)
-    store_correlation_scores("bolt://localhost:7687", "neo4j", "password")
+    store_correlation_scores()
     return {"message": "Correlation calculation completed and ready for querying."}
 
 # Endpoint to query the Neo4j database by title
 @app.get("/query-by-title/")
 @limiter.limit("5/second")
 def query_by_title(request: Request, title: str):
-    connector = Neo4jConnector("bolt://localhost:7687", "neo4j", "password")
+    connector = Neo4jConnector()
     result = connector.query_by_title(title)
     connector.close()
     return {"result": result}
+
+# Endpoint to test the connection to the Neo4j database
+@app.get("/test-connection/")
+@limiter.limit("5/second")
+def test_connection(request: Request):
+    connector = Neo4jConnector()
+    success = connector.test_connection()
+    connector.close()
+    return {"connection_successful": success}
 
 # TODO: Add an endpoint to query the Neo4j database for correlation values
 # The queries will be: pairwise causal relationship, top N causal relationships, and all causal relationships
