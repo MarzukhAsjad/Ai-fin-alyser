@@ -3,23 +3,25 @@ from .neo4j_connector import Neo4jConnector
 import pandas as pd
 
 corpus = None
+titles = None
 
-# Read the CSV file and extract the corpora
-def read_csv_extract_corpora(file_path: str) -> list:
-    global corpus
-    # Read the CSV file and extract the corpus
+# Read the CSV file and extract the titles and summaries
+def read_csv_extract_corpora(file_path: str):
+    global corpus, titles
+    # Read the CSV file and extract the titles and summaries
     df = pd.read_csv(file_path)
+    titles = df['Title'].tolist()
     corpus = df['Summary'].tolist()
 
 # Store correlation scores between all pairs of corpora in the Neo4j database
 def store_correlation_scores(neo4j_uri: str, neo4j_user: str, neo4j_password: str):
     connector = Neo4jConnector(neo4j_uri, neo4j_user, neo4j_password)
 
-    if corpus is None:
-        raise ValueError("Corpus not initialized. Please call read_csv_extract_corpora() first.")
+    if corpus is None or titles is None:
+        raise ValueError("Corpus or titles not initialized. Please call read_csv_extract_corpora() first.")
     
     for i in range(len(corpus)):
-        connector.create_corpus_node(i, corpus[i])
+        connector.create_corpus_node(i, titles[i], corpus[i])
         for j in range(i + 1, len(corpus)):
             correlation = compare_corpora(corpus[i], corpus[j])
             connector.create_correlation_relationship(i, j, correlation)
