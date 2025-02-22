@@ -5,13 +5,18 @@ import pandas as pd
 corpus = None
 titles = None
 
-# Read the CSV file and extract the titles and summaries
+# Read the CSV file and extract the titles and content
 def read_csv_extract_corpora(file_path: str):
     global corpus, titles
-    # Read the CSV file and extract the titles and summaries
+    # Read the CSV file
     df = pd.read_csv(file_path)
+    
+    # Drop rows with NaN values or blank cells
+    df.dropna(subset=['Title', 'Content'], inplace=True)
+    
+    # Extract the titles and content
     titles = df['Title'].tolist()
-    corpus = df['Summary'].tolist()
+    corpus = df['Content'].tolist()
 
 # Store correlation scores between all pairs of corpora in the Neo4j database
 def store_correlation_scores():
