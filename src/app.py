@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Request
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -11,6 +11,10 @@ from .services.causal import (read_csv_extract_corpora, store_correlation_scores
 from .services.cluster import run_hierarchical_clustering
 import logging
 import math
+import os
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -121,3 +125,24 @@ def test_connection(request: Request):
 def hierarchical_clustering_endpoint(request: Request):
     run_hierarchical_clustering()
     return {"message": "Hierarchical clustering completed."}
+
+@app.get("/download-hierarchical-clustering-image/")
+@limiter.limit("5/second")
+def get_clustering_image(request: Request):
+    image_path = "hierarchical_clustering.png"
+    abs_path = os.path.abspath(image_path)
+    
+    logger.debug(f"Looking for clustering image at: {abs_path}")
+    
+    if os.path.exists(abs_path):
+        logger.info(f"Found clustering image at: {abs_path}")
+        return FileResponse(abs_path, media_type="image/png", filename="hierarchical_clustering.png")
+    
+    logger.error(f"Clustering image not found at: {abs_path}")
+    logger.debug(f"Current working directory: {os.getcwd()}")
+    logger.debug(f"Directory contents: {os.listdir('.')}")
+    
+    return JSONResponse(
+        status_code=404,
+        content={"error": f"Clustering image not found at {abs_path}"}
+    )
