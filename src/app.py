@@ -5,6 +5,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from .extractor import process_csv_sync, print_data_to_file
 from .causal import read_csv_extract_corpora, store_correlation_scores
+from .neo4j_connector import Neo4jConnector
 import logging
 import os
 
@@ -58,9 +59,18 @@ def calculate_correlation(request: Request):
     # Ensure the file path is correctly referenced
     file_path = os.path.join(os.path.dirname(__file__), "..", "..", "printed_data.csv")
     print("File path:", file_path)
-    read_csv_extract_corpora(file_path)
+    read_csv_extract_corpora(file_path, extract_titles=True, extract_summaries=True)
     store_correlation_scores("bolt://localhost:7687", "neo4j", "password")
     return {"message": "Correlation calculation completed and ready for querying."}
+
+# Endpoint to query the Neo4j database by title
+@app.get("/query-by-title/")
+@limiter.limit("5/second")
+def query_by_title(request: Request, title: str):
+    connector = Neo4jConnector("bolt://localhost:7687", "neo4j", "password")
+    result = connector.query_by_title(title)
+    connector.close()
+    return {"result": result}
 
 # TODO: Add an endpoint to query the Neo4j database for correlation values
 # The queries will be: pairwise causal relationship, top N causal relationships, and all causal relationships
