@@ -10,6 +10,8 @@ import os
 from io import BytesIO
 from PIL import Image
 import logging
+import networkx as nx
+import matplotlib.pyplot as plt
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -168,8 +170,10 @@ def show_correlations():
             f"{API_BASE_URL}/query-pairwise-causal/",
             loading_text="Loading causal relations..."
         )
-        if result:
-            st.write(result)
+        if result and result.get('result'):
+            st.subheader("Correlation Network Visualization")
+            image_buf = create_correlation_network(result['result'])
+            st.image(image_buf, caption="Correlation Network", use_column_width=True)
     
     st.subheader("Highest Correlations")
     limit = st.number_input("Number of top correlations", min_value=1, value=1)
@@ -240,6 +244,48 @@ def show_clustering():
                 error_message = response.json() if response.headers.get('content-type') == 'application/json' else response.text
                 logger.error(f"Failed to load clustering visualization: {error_message}")
                 st.error(f"Failed to load clustering visualization: {error_message}")
+
+def create_correlation_network(data):
+    # Create a new graph
+    G = nx.Graph()
+    
+    # Add edges with weights
+    for item in data:
+        source = item['corpusTitle'].replace(' - Wikipedia', '')
+        target = item['highestCorrelationCorpus'].replace(' - Wikipedia', '')
+        weight = item['highestCorrelation']
+        
+        # Add edge with weight
+        G.add_edge(source, target, weight=weight)
+    
+    # Create the plot
+    plt.figure(figsize=(15, 10))
+    
+    # Calculate layout (you can experiment with different layouts)
+    pos = nx.spring_layout(G, k=1, iterations=50)
+    
+    # Draw the network
+    nx.draw_networkx_nodes(G, pos, node_color='lightblue', 
+                          node_size=2000, alpha=0.7)
+    
+    # Draw edges with varying thickness based on correlation
+    edges = G.edges()
+    weights = [G[u][v]['weight'] * 2 for u, v in edges]  # Scale up weights for visibility
+    nx.draw_networkx_edges(G, pos, width=weights, alpha=0.5)
+    
+    # Add labels
+    labels = {node: node for node in G.nodes()}
+    nx.draw_networkx_labels(G, pos, labels, font_size=8, font_weight='bold')
+    
+    plt.title("Correlation Network", pad=20)
+    plt.axis('off')
+    
+    # Save to buffer
+    buf = BytesIO()
+    plt.savefig(buf, format='png', bbox_inches='tight', dpi=300)
+    plt.close()
+    buf.seek(0)
+    return buf
 
 if __name__ == "__main__":
     main()
