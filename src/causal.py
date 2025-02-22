@@ -74,3 +74,11 @@ def clear_correlation_database():
     connector.close()
     return "Database cleared."
 
+# Wrapper function to test the Neo4j database connection
+def test_db_connection():
+    from .neo4j_connector import Neo4jConnector  # local import if needed
+    connector = Neo4jConnector()
+    success = connector.test_connection()
+    connector.close()
+    return success
+

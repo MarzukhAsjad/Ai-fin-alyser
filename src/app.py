@@ -7,10 +7,8 @@ from .extractor import process_csv_sync, print_data_to_file
 from .causal import (read_csv_extract_corpora, store_correlation_scores,
                      query_corpus_by_title, query_all_correlations, 
                      query_pairwise_causal, query_highest_correlation,
-                     clear_correlation_database)
-from .nlp_processor import compare_corpora
+                     clear_correlation_database, test_db_connection)
 import logging
-import os
 import math
 
 app = FastAPI()
@@ -105,3 +103,9 @@ def get_highest_correlation(request: Request, limit: int = 1):
 def clear_database(request: Request):
     message = clear_correlation_database()
     return {"message": message}
+
+@app.get("/test-connection/")
+@limiter.limit("5/second")
+def test_connection(request: Request):
+    success = test_db_connection()
+    return {"connection_successful": success}
