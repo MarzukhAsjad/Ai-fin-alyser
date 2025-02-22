@@ -21,7 +21,7 @@ import logging
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
-progress = {"total": 0, "processed": 0}
+progress = {"total": 0, "processed": 0, "error_processed": 0}
 df_global = None  # Global variable to store the DataFrame
 
 # Function to extract the title and meaningful content from a BeautifulSoup object
@@ -77,9 +77,11 @@ async def process_csv(contents: bytes, ratio=0.1, max_sentences=10):
         urls = df['URL'].tolist()
         total = len(urls)
         processed = 0
+        error_processed = 0
+        # Preallocate lists to hold row data
         accessibility = [None] * total
         titles = [None] * total
-        contents = [None] * total
+        contents_list = [None] * total
         summaries = [None] * total
         
         # Create an asyncio.Queue to collect results
@@ -88,32 +90,28 @@ async def process_csv(contents: bytes, ratio=0.1, max_sentences=10):
         # Create tasks to process each URL
         tasks = [parse_html_content(url, queue, idx, ratio, max_sentences) for idx, url in enumerate(urls)]
         
-        # Process results as they are put in the queue
+        # Process tasks as they complete
         for task in asyncio.as_completed(tasks):
             try:
                 await task
                 idx, title, content, summary, accessibility_status = await queue.get()
                 titles[idx] = title
-                contents[idx] = content
+                contents_list[idx] = content
                 summaries[idx] = summary
                 accessibility[idx] = accessibility_status
+                if accessibility_status != "Accessible":
+                    error_processed += 1
             except Exception as e:
-                logging.error(f"Error during processing: {e}")
-                # Ensure idx is defined before referencing it
-                if 'idx' in locals():
-                    titles[idx] = "No Title"
-                    contents[idx] = ""
-                    summaries[idx] = ""
-                    accessibility[idx] = "Not Accessible"
+                logging.error(f"Error during processing task: {e}")
             finally:
                 processed += 1
-                update_message = f"Processed {processed}/{total}\n"
+                update_message = f"Processed {processed}/{total} (Errors: {error_processed})\n"
                 logging.info(update_message)
                 yield update_message
         
         # Add new columns to the DataFrame
         df['Title'] = titles
-        df['Content'] = contents
+        df['Content'] = contents_list
         df['Summary'] = summaries
         df['Accessibility'] = accessibility
         
