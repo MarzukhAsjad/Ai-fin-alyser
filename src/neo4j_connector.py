@@ -54,7 +54,8 @@ class Neo4jConnector:
     @staticmethod
     def _create_and_return_relationship(tx, corpus_id1, corpus_id2, correlation):
         query = (
-            "MATCH (c1:Corpus {id: $corpus_id1}), (c2:Corpus {id: $corpus_id2}) "
+            "MATCH (c1:Corpus {id: $corpus_id1}) "
+            "MATCH (c2:Corpus {id: $corpus_id2}) "
             "CREATE (c1)-[r:CORRELATED {correlation: $correlation}]->(c2) "
             "RETURN r"
         )

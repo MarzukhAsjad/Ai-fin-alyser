@@ -104,7 +104,6 @@ def query_all_correlations(request: Request):
         
     return {"result": sanitized}
 
-# TODO: Add an endpoint to query the Neo4j database for correlation values
 # This endpoint will clear all data in the Neo4j database
 @app.delete("/clear-database/")
 @limiter.limit("1/second")
