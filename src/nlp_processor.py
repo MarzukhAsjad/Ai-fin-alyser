@@ -97,4 +97,9 @@ def compare_corpora(corpus1, corpus2) -> float:
     os.remove(temp1_path)
     os.remove(temp2_path)
 
+    # Replace NaN with None (or a default value) so JSON can serialize it
+    import math
+    if result is None or (isinstance(result, float) and math.isnan(result)):
+        result = None
+
     return result

@@ -9,6 +9,7 @@ from .neo4j_connector import Neo4jConnector
 from .nlp_processor import compare_corpora
 import logging
 import os
+import math
 
 app = FastAPI()
 
@@ -89,7 +90,19 @@ def query_all_correlations(request: Request):
     connector = Neo4jConnector()
     result = connector.query_all_correlations()
     connector.close()
-    return {"result": result}
+    
+    # Sanitize correlation values
+    sanitized = []
+    for record in result:
+        corr = record.get("correlation")
+        if corr is not None and math.isfinite(corr):
+            corr = round(corr, 5)
+        # Replace non-finite correlation with None
+        if corr is None or not math.isfinite(corr):
+            record["correlation"] = None
+        sanitized.append(record)
+        
+    return {"result": sanitized}
 
 # TODO: Add an endpoint to query the Neo4j database for correlation values
 # This endpoint will clear all data in the Neo4j database
