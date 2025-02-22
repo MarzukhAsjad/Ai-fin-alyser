@@ -37,6 +37,15 @@ class Neo4jConnector:
         with self.driver.session() as session:
             result = session.execute_read(self._query_all_correlations)
             return result
+        
+    def query_pairwise_causal(self):
+        with self.driver.session() as session:
+            return session.execute_read(self._query_pairwise_causal)
+
+    def query_highest_correlation(self, n = 1):
+        with self.driver.session() as session:
+            result = session.execute_read(self._query_highest_correlation, n)
+            return result
 
     def clear_database(self):
         with self.driver.session() as session:
@@ -83,6 +92,28 @@ class Neo4jConnector:
             "RETURN c1.id AS id1, c1.title AS title1, c2.id AS id2, c2.title AS title2, r.correlation AS correlation"
         )
         result = tx.run(query)
+        return [record.data() for record in result]
+
+    @staticmethod
+    def _query_pairwise_causal(tx):
+        query = (
+            "MATCH (c:Corpus)-[r:CORRELATED]->(other:Corpus) " 
+            "WITH c, r, other ORDER BY r.correlation DESC " 
+            "WITH c, head(collect({otherTitle: other.title, correlation: r.correlation})) AS bestRel " 
+            "RETURN c.title AS corpusTitle, bestRel.otherTitle AS highestCorrelationCorpus, bestRel.correlation AS highestCorrelation"
+        )
+        result = tx.run(query)
+        return [record.data() for record in result]
+
+    @staticmethod
+    def _query_highest_correlation(tx, n: int = 1):
+        query = (
+            "MATCH (c:Corpus)-[r:CORRELATED]->(other:Corpus) " 
+            "WITH c, r, other ORDER BY r.correlation DESC " 
+            "WITH c, collect({otherTitle: other.title, correlation: r.correlation}) AS correlations " 
+            "RETURN c.title AS corpusTitle, correlations[0..$n] AS topCorrelations"
+        )
+        result = tx.run(query, n=n)
         return [record.data() for record in result]
 
     @staticmethod

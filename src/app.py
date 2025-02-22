@@ -104,6 +104,24 @@ def query_all_correlations(request: Request):
         
     return {"result": sanitized}
 
+# Endpoint to query pairwise causal relationships
+@app.get("/query-pairwise-causal/")
+@limiter.limit("5/second")
+def get_pairwise_causal(request: Request):
+    connector = Neo4jConnector()
+    result = connector.query_pairwise_causal()
+    connector.close()
+    return {"result": result}
+
+# Endpoint to query the top N causal relationships
+@app.get("/query-highest-correlation/")
+@limiter.limit("5/second")
+def get_highest_correlation(request: Request, n = 1):
+    connector = Neo4jConnector()
+    result = connector.query_highest_correlation(n)
+    connector.close()
+    return {"result": result}
+
 # This endpoint will clear all data in the Neo4j database
 @app.delete("/clear-database/")
 @limiter.limit("1/second")
