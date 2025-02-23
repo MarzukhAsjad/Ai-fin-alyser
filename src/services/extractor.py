@@ -26,12 +26,16 @@ df_global = None  # Global variable to store the DataFrame
 
 # Function to extract the title and meaningful content from a BeautifulSoup object
 def extract_content(soup):
-    title = soup.title.string if soup.title else "No Title"
+    title = soup.title.string if soup.title else None
     content = ""
     
     # Extract meaningful content (subtitles and paragraphs)
     for tag in soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p']):
         content += tag.get_text() + "\n"
+    
+    # Validate content
+    if not title or not content.strip():
+        raise ValueError("No meaningful content found in the article")
     
     return title, content
 
@@ -42,17 +46,30 @@ async def parse_html_content(url: str, queue: asyncio.Queue, idx: int, ratio=0.1
             # Send a GET request to the URL
             response = await client.get(url)
             response.raise_for_status()
+            
+            # Check if response has content
+            if not response.content:
+                raise ValueError("Empty response received")
+            
             soup = BeautifulSoup(response.content, 'html.parser')
             
-            # Extract title and content
+            # Extract title and content (will raise ValueError if empty)
             title, non_title_content = extract_content(soup)
             
             # Generate summary using make_summary
             summary = make_summary(non_title_content, ratio, max_sentences)
             
+            # Validate summary
+            if not summary:
+                raise ValueError("Could not generate summary from content")
+            
             await queue.put((idx, title, non_title_content, summary, "Accessible"))
-        except httpx.RequestError as e:
-            print(f"Error processing URL {url}: {e}")
+            
+        except (httpx.RequestError, ValueError) as e:
+            logging.error(f"Error processing URL {url}: {e}")
+            await queue.put((idx, "No Title", "", "", "Not Accessible"))
+        except Exception as e:
+            logging.error(f"Unexpected error processing URL {url}: {e}")
             await queue.put((idx, "No Title", "", "", "Not Accessible"))
 
 # Asynchronous function to process a CSV file containing URLs and yield progress updates
@@ -91,23 +108,34 @@ async def process_csv(contents: bytes, ratio=0.1, max_sentences=10):
         tasks = [parse_html_content(url, queue, idx, ratio, max_sentences) for idx, url in enumerate(urls)]
         
         # Process tasks as they complete
-        for task in asyncio.as_completed(tasks):
-            try:
-                await task
-                idx, title, content, summary, accessibility_status = await queue.get()
-                titles[idx] = title
-                contents_list[idx] = content
-                summaries[idx] = summary
-                accessibility[idx] = accessibility_status
-                if accessibility_status != "Accessible":
+        pending_tasks = set(tasks)
+        while pending_tasks:
+            done, pending_tasks = await asyncio.wait(
+                pending_tasks, 
+                return_when=asyncio.FIRST_COMPLETED
+            )
+            
+            for completed_task in done:
+                try:
+                    await completed_task
+                    idx, title, content, summary, accessibility_status = await queue.get()
+                    titles[idx] = title
+                    contents_list[idx] = content
+                    summaries[idx] = summary
+                    accessibility[idx] = accessibility_status
+                    if accessibility_status != "Accessible":
+                        error_processed += 1
+                except Exception as e:
+                    logging.error(f"Error during processing task: {e}")
                     error_processed += 1
-            except Exception as e:
-                logging.error(f"Error during processing task: {e}")
-            finally:
-                processed += 1
-                update_message = f'{{"status": "processing", "total": {total}, "processed": {processed}, "errors": {error_processed}}}\n'
-                logging.info(update_message)
-                yield update_message
+                finally:
+                    processed += 1
+                    update_message = (
+                        f'{{"status": "processing", "total": {total}, '
+                        f'"processed": {processed}, "errors": {error_processed}}}\n'
+                    )
+                    logging.info(update_message)
+                    yield update_message
         
         # Add new columns to the DataFrame
         df['Title'] = titles
@@ -118,14 +146,19 @@ async def process_csv(contents: bytes, ratio=0.1, max_sentences=10):
         # Store the DataFrame in the global variable
         df_global = df
         
-        completion_message = '{"status": "complete", "message": "Processing complete", "total": ' + str(total) + ', "processed": ' + str(processed) + ', "errors": ' + str(error_processed) + '}\n'
-        logging.info(completion_message)
+        # Generate completion message
+        completion_message = (
+            f'{{"status": "complete", "message": "Processing complete", '
+            f'"total": {total}, "processed": {processed}, "errors": {error_processed}}}\n'
+        )
+        logging.info(completion_message.strip())
         
         # Call print_data_to_file after completion
         print_result = print_data_to_file()
-        completion_message = completion_message.rstrip('\n') + f', "file_status": "{print_result}"' + '}\n'
+        final_message = completion_message.rstrip('\n')[:-1] + f', "file_status": "{print_result}"' + '}\n'
         
-        yield completion_message
+        yield final_message
+
     except asyncio.CancelledError:
         yield '{"status": "cancelled", "message": "Processing was cancelled"}\n'
     except Exception as e:
