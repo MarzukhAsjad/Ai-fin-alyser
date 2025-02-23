@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from services.causal import query_all_correlations
 import math
 import logging
+import pandas as pd  # NEW: to read printed_data.csv for titles
 
 logger = logging.getLogger(__name__)
 
@@ -38,12 +39,13 @@ def perform_hierarchical_clustering(distance_matrix):
     Z = linkage(distance_matrix[np.triu_indices_from(distance_matrix, k=1)], method="ward")
     return Z
 
-# Visualize results with a dendrogram
-def visualize_dendrogram(Z, output_path="hierarchical_clustering.png"):
+# NEW: Update visualize_dendrogram to accept id_title mapping
+def visualize_dendrogram(Z, id_title, output_path="hierarchical_clustering.png"):
     plt.figure(figsize=(10, 7))
-    dendrogram(Z)
+    # Use leaf_label_func to replace id with title
+    dendrogram(Z, leaf_label_func=lambda x: id_title.get(int(x), str(x)))
     plt.title("Hierarchical Clustering Dendrogram")
-    plt.xlabel("Document Index")
+    plt.xlabel("Document")
     plt.ylabel("Distance")
     plt.savefig(output_path)
     plt.close()
@@ -74,7 +76,7 @@ def sanitize_correlation(result):
         sanitized.append(record)
     return {"result": sanitized}
 
-# Main function to run all steps
+# Main function to run clustering with custom leaf labeling
 def run_hierarchical_clustering():
     try:
         # Query data
@@ -86,30 +88,15 @@ def run_hierarchical_clustering():
         # Perform hierarchical clustering
         Z = perform_hierarchical_clustering(distance_matrix)
 
-        # Extract clusters (adjust threshold or number of clusters as needed)
-        threshold = 1.0   # Example threshold for cutting the dendrogram
-        labels = extract_clusters(Z, threshold=threshold)
+        # NEW: Build id_title mapping from printed_data.csv
+        df = pd.read_csv("printed_data.csv")
+        id_title = dict(enumerate(df["Title"].tolist()))
         
-        # Create the plot using the non-interactive backend
-        plt.switch_backend('Agg')
-        fig = plt.figure(figsize=(10, 7))
+        # Call updated visualization with custom labels
+        visualize_dendrogram(Z, id_title)
         
-        # Create dendrogram
-        dendrogram(Z)
-        
-        plt.title('Hierarchical Clustering Dendrogram')
-        plt.xlabel('Distance')
-        
-        # Save the plot
-        output_path = "hierarchical_clustering.png"
-        plt.savefig(output_path)
-        plt.close()  # Close the figure to free memory
-        
-        logger.info(f"Clustering image saved to: {output_path}")
-        logger.debug(f"Cluster Labels: {labels}")
-        print("Cluster Labels:", labels)
-
-        return {"Cluster Labels": labels.tolist()}  # Convert numpy array to list
+        logger.info("Hierarchical clustering completed.")
+        return {"message": "Hierarchical clustering completed."}
         
     except Exception as e:
         logger.error(f"Error in hierarchical clustering: {e}")
