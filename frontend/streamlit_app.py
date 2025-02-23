@@ -92,14 +92,18 @@ def process_upload_stream(response):
                         if progress_bar is not None:
                             progress_bar.progress(progress)
                     
-                    # Show status updates
-                    status_text = f"Status: {data['status']}\n"
-                    if 'errors' in data:
-                        status_text += f"Errors in processing articles: {data['errors']}\n"
-                    if 'message' in data:
-                        status_text += f"Message from API: {data['message']}"
+                    # Show detailed status updates
+                    status_text = [
+                        f"Status: {data['status']}",
+                        f"Progress: {data.get('processed', 0)} of {data.get('total', '?')} articles"
+                    ]
                     
-                    status_container.text(status_text)
+                    if 'errors' in data:        
+                        status_text.append(f"Errors in processing articles: {data['errors']}")
+                    if 'message' in data:
+                        status_text.append(f"Message from API: {data['message']}")
+                    
+                    status_container.text('\n'.join(status_text))
                     
                     # If complete, return final message
                     if data['status'] == 'complete':
