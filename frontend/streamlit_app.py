@@ -117,7 +117,7 @@ def process_upload_stream(response):
         raise
 
 def main():
-    st.title("Financial Data Analyzer")
+    st.title("AI-fin-alyser")
     st.sidebar.title("Navigation")
     
     # Sidebar navigation
@@ -140,7 +140,7 @@ def main():
         show_clustering()
 
 def show_home():
-    st.header("Welcome to Financial Data Analyzer")
+    st.header("Welcome to AI driven financial analysis")
     if st.button("Test Connection"):
         result = async_api_call(
             requests.get,
