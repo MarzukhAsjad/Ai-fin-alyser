@@ -6,7 +6,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - NEO4J_URI=neo4j://neo4j-container:7687  # Use container name instead of localhost
+      - NEO4J_URI=bolt://neo4j-container:7687  # Use container name instead of localhost
       - NEO4J_USER=neo4j
       - NEO4J_PASSWORD=mysecretpassword
     networks:
@@ -19,7 +19,7 @@ services:
     ports:
       - "8501:8501"   # Streamlit default port
     environment:
-      - API_BASE_URL=http://localhost:8000  # Use service name instead of localhost
+      - API_BASE_URL=http://ai-fin-alyser-backend-1:8000  # Use service name instead of localhost
     depends_on:
       - backend
     networks:
