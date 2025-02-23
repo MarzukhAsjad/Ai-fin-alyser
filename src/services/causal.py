@@ -135,6 +135,14 @@ def query_highest_correlation(n: int = 1):
     connector.close()
     return result
 
+# Wrapper function to query all corpora (ids, titles, and texts)
+def query_all_corpora():
+    from utils.neo4j_connector import Neo4jConnector
+    connector = Neo4jConnector()
+    result = connector.query_all_corpora()
+    connector.close()
+    return result
+
 # Wrapper function to clear the correlations database
 def clear_correlation_database():
     connector = Neo4jConnector()

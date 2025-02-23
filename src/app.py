@@ -8,7 +8,7 @@ from services.causal import (read_csv_extract_corpora, store_correlation_scores,
                      query_corpus_by_title, query_all_correlations, 
                      query_pairwise_causal, query_highest_correlation,
                      clear_correlation_database, test_db_connection, store_correlation_scores_stream)
-from services.cluster import run_hierarchical_clustering
+from services.cluster import run_hierarchical_clustering, run_lda_clustering
 import logging
 import math
 import os
@@ -145,3 +145,16 @@ def get_clustering_image(request: Request):
         status_code=404,
         content={"error": f"Clustering image not found at {abs_path}"}
     )
+
+# This endpoint will be used to run LDA clustering
+@app.get("/run-lda-clustering/")
+@limiter.limit("1/second")
+def lda_clustering_endpoint(request: Request):
+    try:
+        run_lda_clustering()
+    except Exception as e:
+        logger.error(f"Error in LDA clustering: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Error in LDA clustering: {e}"
+    return {"message": "LDA clustering completed."}

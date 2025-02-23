@@ -51,6 +51,11 @@ class Neo4jConnector:
         with self.driver.session() as session:
             session.execute_write(self._clear_database)
 
+    def query_all_corpora(self):
+        with self.driver.session() as session:
+            result = session.execute_read(self._query_all_corpora)
+            return result
+
     @staticmethod
     def _create_and_return_corpus(tx, corpus_id, title, text):
         query = (
@@ -120,3 +125,12 @@ class Neo4jConnector:
     def _clear_database(tx):
         query = "MATCH (n) DETACH DELETE n"
         tx.run(query)
+
+    @staticmethod
+    def _query_all_corpora(tx):
+        query = (
+            "MATCH (c:Corpus) "
+            "RETURN c.id AS id, c.title AS title, c.text AS text"
+        )
+        result = tx.run(query)
+        return [record.data() for record in result]
