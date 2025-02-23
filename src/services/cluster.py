@@ -39,7 +39,7 @@ def perform_hierarchical_clustering(distance_matrix):
     Z = linkage(distance_matrix[np.triu_indices_from(distance_matrix, k=1)], method="ward")
     return Z
 
-# Update visualize_dendrogram to plot the graph and legend in a 70:30 ratio
+# Update visualize_dendrogram to exclude IDs with the title "No Title" from the legend
 def visualize_dendrogram(Z, id_title, output_path="hierarchical_clustering.png"):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 7), gridspec_kw={'width_ratios': [7, 3]})
     
@@ -50,7 +50,7 @@ def visualize_dendrogram(Z, id_title, output_path="hierarchical_clustering.png")
     ax1.set_ylabel("Distance")
     
     # Create a legend with titles on the right
-    handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='black', markersize=5, label=f"{i}: {title}") for i, title in id_title.items()]
+    handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='black', markersize=5, label=f"{i}: {title}") for i, title in id_title.items() if title != "No Title"]
     ax2.legend(handles=handles, loc='center')
     ax2.axis('off')
     
