@@ -152,9 +152,10 @@ def get_clustering_image(request: Request):
 def lda_clustering_endpoint(request: Request):
     try:
         run_lda_clustering()
+        return {"message": "LDA clustering completed."}
     except Exception as e:
         logger.error(f"Error in LDA clustering: {e}")
         return JSONResponse(
             status_code=500,
-            content={"error": f"Error in LDA clustering: {e}"
-    return {"message": "LDA clustering completed."}
+            content={"error": f"Error in LDA clustering: {e}"}
+        )
