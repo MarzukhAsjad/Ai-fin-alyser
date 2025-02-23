@@ -245,15 +245,19 @@ def show_correlations():
 def show_database_operations():
     st.header("Database Operations")
     
-    if st.button("Clear Database"):
-        if st.checkbox("Are you sure? This action cannot be undone!"):
-            result = async_api_call(
-                requests.delete,
-                f"{API_BASE_URL}/clear-database/",
-                loading_text="Clearing database..."
-            )
-            if result:
-                st.write(result)
+    # Show confirmation checkbox and button side by side
+    col1, col2 = st.columns([3, 1])
+    confirm = col1.checkbox("I understand this will clear all data permanently")
+    
+    if col2.button("Clear Database", disabled=not confirm):
+        try:
+            response = requests.delete(f"{API_BASE_URL}/clear-database/")
+            if response.status_code == 200:
+                st.success("Database cleared successfully!")
+            else:
+                st.error(f"Failed to clear database: {response.text}")
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
 
 def show_clustering():
     st.header("Hierarchical Clustering Analysis")
