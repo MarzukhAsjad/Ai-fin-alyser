@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Request
-from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
+from fastapi.responses import StreamingResponse, JSONResponse, FileResponse, Response
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -57,10 +57,7 @@ async def upload_csv(request: Request, file: UploadFile = File(...)):
 @limiter.limit("5/second")
 def print_data(request: Request):
     result = return_df_as_csv()
-    if isinstance(result, str):
-        return JSONResponse(content={"message": result})
-    else:
-        return StreamingResponse(result, media_type="text/csv", headers={"Content-Disposition": "attachment; filename=output_data.csv"})
+    return Response(result, media_type="text/csv", headers={"Content-Disposition": "attachment; filename=output_data.csv"})
 
 # Endpoint to find correlation between all available corpora
 @app.get("/calculate-correlation/")

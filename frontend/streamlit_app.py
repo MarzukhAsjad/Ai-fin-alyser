@@ -178,14 +178,32 @@ def show_view_data():
     st.header("View Data")
     
     if st.button("Show All Data"):
-        result = async_api_call(
-            requests.get,
-            f"{API_BASE_URL}/print-data/",
-            loading_text="Loading data..."
-        )
-        if result:
-            st.write(result)
-    
+        with st.spinner("Loading data..."):
+            try:
+                response = requests.get(f"{API_BASE_URL}/view-data/")
+                
+                if response.status_code == 200:
+                    content_type = response.headers.get('content-type', '')
+                    
+                    if 'text/csv' in content_type:
+                        # Create a download button for the CSV
+                        st.download_button(
+                            label="📥 Download CSV",
+                            data=response.content,
+                            file_name="extracted_data.csv",
+                            mime="text/csv"
+                        )
+                        st.success("Data ready for download!")
+                    else:
+                        # Handle JSON response (likely an error message)
+                        result = response.json()
+                        st.write(result)
+                else:
+                    st.error(f"Failed to load data. Status code: {response.status_code}")
+                    
+            except Exception as e:
+                st.error(f"Error loading data: {str(e)}")
+
     st.subheader("Query by Title")
     title = st.text_input("Enter title to search")
     if title and st.button("Search"):
