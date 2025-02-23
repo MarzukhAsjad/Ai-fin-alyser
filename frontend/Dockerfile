@@ -1,10 +1,10 @@
-# Use the official Python image from the Docker Hub
-FROM python:3.9-slim
+# Use the official Python 3.12 image from the Docker Hub
+FROM python:3.12-slim
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the requirements.txt from the project root (adjust relative path accordingly)
+# Copy the requirements.txt from the root directory (same level as docker-compose.yml)
 COPY ../requirements.txt .
 
 # Create virtual environment and install dependencies
@@ -14,7 +14,7 @@ RUN python -m venv venv && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code from the frontend directory
-COPY . .
+COPY frontend/ .
 
 # Expose the port that Streamlit will run on
 EXPOSE 8501

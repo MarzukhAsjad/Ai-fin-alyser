@@ -1,11 +1,11 @@
-# Use the official Python image from the Docker Hub
-FROM python:3.9-slim
+# Use the official Python 3.12 image from the Docker Hub
+FROM python:3.12-slim
 
 # Set the working directory in the container
-WORKDIR /app
+WORKDIR /app/src
 
-# Copy only the requirements file first for better caching
-COPY src/requirements.txt .
+# Copy only the requirements file from the root directory for better caching
+COPY ../requirements.txt .
 
 # Create virtual environment and install dependencies
 RUN python -m venv venv && \
