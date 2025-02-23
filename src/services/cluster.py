@@ -39,14 +39,22 @@ def perform_hierarchical_clustering(distance_matrix):
     Z = linkage(distance_matrix[np.triu_indices_from(distance_matrix, k=1)], method="ward")
     return Z
 
-# NEW: Update visualize_dendrogram to accept id_title mapping
+# Update visualize_dendrogram to plot the graph and legend in a 70:30 ratio
 def visualize_dendrogram(Z, id_title, output_path="hierarchical_clustering.png"):
-    plt.figure(figsize=(10, 7))
-    # Use leaf_label_func to replace id with title
-    dendrogram(Z, leaf_label_func=lambda x: id_title.get(int(x), str(x)))
-    plt.title("Hierarchical Clustering Dendrogram")
-    plt.xlabel("Document")
-    plt.ylabel("Distance")
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 7), gridspec_kw={'width_ratios': [7, 3]})
+    
+    # Plot dendrogram on the left
+    dendrogram(Z, labels=list(id_title.keys())[:len(Z) + 1], ax=ax1)
+    ax1.set_title("Hierarchical Clustering Dendrogram")
+    ax1.set_xlabel("Document ID")
+    ax1.set_ylabel("Distance")
+    
+    # Create a legend with titles on the right
+    handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='black', markersize=5, label=f"{i}: {title}") for i, title in id_title.items()]
+    ax2.legend(handles=handles, loc='center')
+    ax2.axis('off')
+    
+    plt.tight_layout()
     plt.savefig(output_path)
     plt.close()
 
