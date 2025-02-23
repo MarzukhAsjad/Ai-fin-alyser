@@ -159,3 +159,25 @@ def lda_clustering_endpoint(request: Request):
             status_code=500,
             content={"error": f"Error in LDA clustering: {e}"}
         )
+
+# This endpoint will return the png from lda clustering
+@app.get("/download-lda-clustering-image/")
+@limiter.limit("5/second")
+def get_lda_clustering_image(request: Request):
+    image_path = "lda_clusters.png"
+    abs_path = os.path.abspath(image_path)
+    
+    logger.debug(f"Looking for clustering image at: {abs_path}")
+    
+    if os.path.exists(abs_path):
+        logger.info(f"Found clustering image at: {abs_path}")
+        return FileResponse(abs_path, media_type="image/png", filename="lda_clusters.png")
+    
+    logger.error(f"Clustering image not found at: {abs_path}")
+    logger.debug(f"Current working directory: {os.getcwd()}")
+    logger.debug(f"Directory contents: {os.listdir('.')}")
+    
+    return JSONResponse(
+        status_code=404,
+        content={"error": f"Clustering image not found at {abs_path}"}
+    )

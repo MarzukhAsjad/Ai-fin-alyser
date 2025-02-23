@@ -115,9 +115,9 @@ def run_lda_clustering():
     lda = LDA(n_topics=5, max_iter=10, random_state=42)
     # Query data
     corpora = query_all_corpora()
-    # Extract all copora and ids
-    corpus = [corpus["corpus"] for corpus in corpora]
-    ids = [corpus["id"] for corpus in corpora]
+    # Extract texts and ids using correct keys from neo4j query
+    corpus = [doc["text"] for doc in corpora]
+    ids = [doc["id"] for doc in corpora]
     # Run LDA clustering
     lda.run(corpus, ids)
     logger.info("LDA clustering completed.")
