@@ -123,7 +123,7 @@ def main():
     # Sidebar navigation
     page = st.sidebar.selectbox(
         "Choose a function",
-        ["Home", "Upload Data", "View Data", "Correlations", "Database Operations", "Clustering"]
+        ["Home", "Upload Data", "View Data", "Correlations", "Clustering", "Database Operations"]
     )
 
     if page == "Home":
@@ -134,10 +134,10 @@ def main():
         show_view_data()
     elif page == "Correlations":
         show_correlations()
-    elif page == "Database Operations":
-        show_database_operations()
     elif page == "Clustering":
         show_clustering()
+    elif page == "Database Operations":
+        show_database_operations()
 
 def show_home():
     st.header("Welcome to AI driven financial analysis")
