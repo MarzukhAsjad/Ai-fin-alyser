@@ -7,7 +7,7 @@ from .services.extractor import process_csv_sync, return_df_as_csv
 from .services.causal import (read_csv_extract_corpora, store_correlation_scores,
                      query_corpus_by_title, query_all_correlations, 
                      query_pairwise_causal, query_highest_correlation,
-                     clear_correlation_database, test_db_connection)
+                     clear_correlation_database, test_db_connection, store_correlation_scores_stream)
 from .services.cluster import run_hierarchical_clustering
 import logging
 import math
@@ -65,10 +65,9 @@ def print_data(request: Request):
 def calculate_correlation(request: Request):
     # Ensure the file path is correctly referenced
     file_path = "printed_data.csv"
-    print("File path:", file_path)
     read_csv_extract_corpora(file_path)
-    store_correlation_scores()
-    return {"message": "Correlation calculation completed and ready for querying."}
+    # Return a streaming response with progress updates
+    return StreamingResponse(store_correlation_scores_stream(), media_type="text/plain")
 
 @app.get("/query-by-title/")
 @limiter.limit("5/second")
