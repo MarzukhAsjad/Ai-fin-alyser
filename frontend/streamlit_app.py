@@ -71,6 +71,47 @@ def async_api_call(request_func, *args, loading_text="Processing...", **kwargs):
             return None
         return result
 
+def process_upload_stream(response):
+    """Process streaming response and yield progress updates"""
+    progress_bar = None
+    status_container = st.empty()
+    
+    try:
+        for line in response.iter_lines():
+            if line:
+                try:
+                    data = json.loads(line)
+                    
+                    # Initialize progress bar when we get the first response
+                    if progress_bar is None and 'total' in data:
+                        progress_bar = st.progress(0)
+                    
+                    # Update progress
+                    if 'processed' in data and 'total' in data:
+                        progress = data['processed'] / data['total']
+                        if progress_bar is not None:
+                            progress_bar.progress(progress)
+                    
+                    # Show status updates
+                    status_text = f"Status: {data['status']}\n"
+                    if 'errors' in data:
+                        status_text += f"Errors in processing articles: {data['errors']}\n"
+                    if 'message' in data:
+                        status_text += f"Message from API: {data['message']}"
+                    
+                    status_container.text(status_text)
+                    
+                    # If complete, return final message
+                    if data['status'] == 'complete':
+                        return data
+                        
+                except json.JSONDecodeError as e:
+                    logger.error(f"Error parsing JSON: {e}")
+                    
+    except Exception as e:
+        logger.error(f"Error processing stream: {e}")
+        raise
+
 def main():
     st.title("Financial Data Analyzer")
     st.sidebar.title("Navigation")
@@ -110,14 +151,24 @@ def show_upload_page():
     uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
     if uploaded_file is not None:
         files = {"file": uploaded_file}
-        result = async_api_call(
-            requests.post,
-            f"{API_BASE_URL}/upload/",
-            files=files,
-            loading_text="Uploading file..."
-        )
-        if result:
-            st.write(result)
+        
+        with st.spinner("Initializing upload..."):
+            try:
+                response = requests.post(
+                    f"{API_BASE_URL}/upload/",
+                    files=files,
+                    stream=True  # Enable streaming response
+                )
+                
+                if response.status_code == 200:
+                    final_result = process_upload_stream(response)
+                    if final_result and final_result['status'] == 'complete':
+                        st.success(final_result['message'])
+                else:
+                    st.error(f"Upload failed with status code: {response.status_code}")
+                    
+            except Exception as e:
+                st.error(f"Error during upload: {e}")
 
 def show_view_data():
     st.header("View Data")
