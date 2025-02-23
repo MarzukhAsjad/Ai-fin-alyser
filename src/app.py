@@ -3,7 +3,7 @@ from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from .services.extractor import process_csv_sync, print_data_to_file
+from .services.extractor import process_csv_sync, return_df_as_csv
 from .services.causal import (read_csv_extract_corpora, store_correlation_scores,
                      query_corpus_by_title, query_all_correlations, 
                      query_pairwise_causal, query_highest_correlation,
@@ -53,11 +53,14 @@ async def upload_csv(request: Request, file: UploadFile = File(...)):
         return {"error": str(e)}
 
 # Endpoint to print the DataFrame to a .txt file
-@app.get("/print-data/")
+@app.get("/view-data/")
 @limiter.limit("5/second")
 def print_data(request: Request):
-    result = print_data_to_file()
-    return {"message": result}
+    result = return_df_as_csv()
+    if isinstance(result, str):
+        return JSONResponse(content={"message": result})
+    else:
+        return StreamingResponse(result, media_type="text/csv", headers={"Content-Disposition": "attachment; filename=output_data.csv"})
 
 # Endpoint to find correlation between all available corpora
 @app.get("/calculate-correlation/")

@@ -120,6 +120,11 @@ async def process_csv(contents: bytes, ratio=0.1, max_sentences=10):
         
         completion_message = '{"status": "complete", "message": "Processing complete", "total": ' + str(total) + ', "processed": ' + str(processed) + ', "errors": ' + str(error_processed) + '}\n'
         logging.info(completion_message)
+        
+        # Call print_data_to_file after completion
+        print_result = print_data_to_file()
+        completion_message = completion_message.rstrip('\n') + f', "file_status": "{print_result}"' + '}\n'
+        
         yield completion_message
     except asyncio.CancelledError:
         yield '{"status": "cancelled", "message": "Processing was cancelled"}\n'
@@ -133,6 +138,7 @@ def process_csv_sync(contents: bytes, ratio=0.1, max_sentences=10):
     async def async_process():
         async for update in process_csv(contents, ratio, max_sentences):
             yield update
+            # No need to call print_data_to_file here as it's already called in process_csv
     return async_process()
 
 # Function to print the DataFrame to a .csv file
@@ -143,3 +149,10 @@ def print_data_to_file():
         return "Data printed to printed_data.csv"
     else:
         return "No data available to print"
+    
+def return_df_as_csv():
+    global df_global
+    if df_global is not None:
+        return df_global.to_csv(index=False, encoding="utf-8")
+    else:
+        return "No data available to return"
