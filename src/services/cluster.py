@@ -111,8 +111,8 @@ def run_hierarchical_clustering():
         logger.error(f"Error in hierarchical clustering: {e}")
         raise
 
-def run_lda_clustering():
-    lda = LDA(n_topics=5, max_iter=10, random_state=42)
+def run_lda_clustering(n_topics: int = 5):
+    lda = LDA(n_topics=n_topics, max_iter=10, random_state=42)
     # Query data
     corpora = query_all_corpora()
     # Extract texts and ids using correct keys from neo4j query
@@ -120,5 +120,5 @@ def run_lda_clustering():
     ids = [doc["id"] for doc in corpora]
     # Run LDA clustering
     lda.run(corpus, ids)
-    logger.info("LDA clustering completed.")
-    return {"message": "LDA clustering completed."}
+    logger.info(f"LDA clustering completed with {n_topics} topics.")
+    return {"message": f"LDA clustering completed with {n_topics} topics."}

@@ -149,9 +149,9 @@ def get_clustering_image(request: Request):
 # This endpoint will be used to run LDA clustering
 @app.get("/run-lda-clustering/")
 @limiter.limit("1/second")
-def lda_clustering_endpoint(request: Request):
+def lda_clustering_endpoint(request: Request, n_topics: int = 5):
     try:
-        run_lda_clustering()
+        run_lda_clustering(n_topics=n_topics)
         return {"message": "LDA clustering completed."}
     except Exception as e:
         logger.error(f"Error in LDA clustering: {e}")

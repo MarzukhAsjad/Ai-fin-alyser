@@ -292,43 +292,61 @@ def show_clustering():
     if 'clustering_completed' not in st.session_state:
         st.session_state.clustering_completed = False
     
-    col1, col2 = st.columns(2)
+    # Add tabs for different clustering methods
+    tab1, tab2 = st.tabs(["Hierarchical Clustering", "LDA Clustering"])
     
-    # Run clustering button
-    if col1.button("Run Hierarchical Clustering"):
-        result = async_api_call(
-            requests.get,
-            f"{API_BASE_URL}/run-hierarchical-clustering/",
-            loading_text="Running hierarchical clustering..."
-        )
-        if result and result.get("message") == "Hierarchical clustering completed.":
-            st.success("Clustering completed successfully!")
-            st.session_state.clustering_completed = True
-        else:
-            st.error("Clustering failed")
-            st.session_state.clustering_completed = False
-    
-    # View results button
-    if col2.button("View Clustering Results", disabled=not st.session_state.clustering_completed):
-        with st.spinner("Loading clustering visualization..."):
-            logger.debug(f"Requesting clustering image from: {API_BASE_URL}/download-hierarchical-clustering-image/")
-            response = requests.get(f"{API_BASE_URL}/download-hierarchical-clustering-image/")
-            
-            logger.debug(f"Image response status code: {response.status_code}")
-            logger.debug(f"Image response headers: {response.headers}")
-            
-            if response.status_code == 200:
-                try:
-                    image = Image.open(BytesIO(response.content))
-                    logger.debug(f"Successfully loaded image: {image.format}, size: {image.size}")
-                    st.image(image, caption="Hierarchical Clustering Results", use_container_width=True)
-                except Exception as e:
-                    logger.error(f"Error processing image: {e}")
-                    st.error(f"Failed to process image: {e}")
+    with tab1:
+        col1, col2 = st.columns(2)
+        # Hierarchical clustering controls
+        if col1.button("Run Hierarchical Clustering"):
+            result = async_api_call(
+                requests.get,
+                f"{API_BASE_URL}/run-hierarchical-clustering/",
+                loading_text="Running hierarchical clustering..."
+            )
+            if result and result.get("message") == "Hierarchical clustering completed.":
+                st.success("Clustering completed successfully!")
+                st.session_state.clustering_completed = True
             else:
-                error_message = response.json() if response.headers.get('content-type') == 'application/json' else response.text
-                logger.error(f"Failed to load clustering visualization: {error_message}")
-                st.error(f"Failed to load clustering visualization: {error_message}")
+                st.error("Clustering failed")
+                st.session_state.clustering_completed = False
+        
+        if col2.button("View Hierarchical Results", disabled=not st.session_state.clustering_completed):
+            with st.spinner("Loading clustering visualization..."):
+                response = requests.get(f"{API_BASE_URL}/download-hierarchical-clustering-image/")
+                if response.status_code == 200:
+                    image = Image.open(BytesIO(response.content))
+                    st.image(image, caption="Hierarchical Clustering Results", use_container_width=True)
+                else:
+                    st.error("Failed to load clustering visualization")
+    
+    with tab2:
+        # LDA clustering controls
+        n_topics = st.number_input("Number of Topics", min_value=2, max_value=20, value=5)
+        col3, col4 = st.columns(2)
+        
+        if col3.button("Run LDA Clustering"):
+            result = async_api_call(
+                requests.get,
+                f"{API_BASE_URL}/run-lda-clustering/",
+                params={"n_topics": n_topics},
+                loading_text="Running LDA clustering..."
+            )
+            if result and "message" in result:
+                st.success(result["message"])
+                st.session_state.lda_completed = True
+            else:
+                st.error("LDA clustering failed")
+                st.session_state.lda_completed = False
+        
+        if col4.button("View LDA Results"):
+            with st.spinner("Loading LDA visualization..."):
+                response = requests.get(f"{API_BASE_URL}/download-lda-clustering-image/")
+                if response.status_code == 200:
+                    image = Image.open(BytesIO(response.content))
+                    st.image(image, caption="LDA Clustering Results", use_container_width=True)
+                else:
+                    st.error("Failed to load LDA visualization")
 
 def create_correlation_network(data):
     # Create a new graph
