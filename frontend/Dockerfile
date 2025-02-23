@@ -4,8 +4,8 @@ FROM python:3.9-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the requirements file first
-COPY requirements.txt .
+# Copy the requirements.txt from the project root (adjust relative path accordingly)
+COPY ../requirements.txt .
 
 # Create virtual environment and install dependencies
 RUN python -m venv venv && \
@@ -13,7 +13,7 @@ RUN python -m venv venv && \
     pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code into the container
+# Copy the rest of the application code from the frontend directory
 COPY . .
 
 # Expose the port that Streamlit will run on
