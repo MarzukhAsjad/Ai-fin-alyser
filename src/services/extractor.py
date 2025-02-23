@@ -14,7 +14,7 @@ import pandas as pd
 from io import StringIO
 import httpx
 from bs4 import BeautifulSoup
-from ..utils.nlp_processor import make_summary
+from utils.nlp_processor import make_summary
 import asyncio
 import logging
 
@@ -167,8 +167,7 @@ def process_csv_sync(contents: bytes, ratio=0.1, max_sentences=10):
     async def async_process():
         async for update in process_csv(contents, ratio, max_sentences):
             yield update
-            # No need to call print_data_to_file here as it's already called in process_csv
-    return async_process()
+    return async_process
 
 # Function to print the DataFrame to a .csv file
 def print_data_to_file():

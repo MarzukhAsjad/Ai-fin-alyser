@@ -3,12 +3,12 @@ from fastapi.responses import StreamingResponse, JSONResponse, FileResponse, Res
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from .services.extractor import process_csv_sync, return_df_as_csv
-from .services.causal import (read_csv_extract_corpora, store_correlation_scores,
+from services.extractor import process_csv_sync, return_df_as_csv
+from services.causal import (read_csv_extract_corpora, store_correlation_scores,
                      query_corpus_by_title, query_all_correlations, 
                      query_pairwise_causal, query_highest_correlation,
                      clear_correlation_database, test_db_connection, store_correlation_scores_stream)
-from .services.cluster import run_hierarchical_clustering
+from services.cluster import run_hierarchical_clustering
 import logging
 import math
 import os
@@ -45,7 +45,7 @@ async def upload_csv(request: Request, file: UploadFile = File(...)):
             contents = await file.read()
             
             # Stream the progress updates
-            return StreamingResponse(process_csv_sync(contents), media_type="text/plain")
+            return StreamingResponse(process_csv_sync(contents)(), media_type="text/plain")
         else:
             return {"error": "File is not a CSV"}
     except Exception as e:

@@ -3,7 +3,7 @@ from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 import matplotlib
 matplotlib.use('Agg')  # Set backend to non-interactive Agg
 import matplotlib.pyplot as plt
-from src.services.causal import query_all_correlations
+from services.causal import query_all_correlations
 import math
 import logging
 

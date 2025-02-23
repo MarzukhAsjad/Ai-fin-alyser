@@ -34,6 +34,7 @@ cs = Similarity(language="eng")
 nltk.data.path.append(CACHE_DIR)
 nltk.download('punkt', download_dir=CACHE_DIR)
 nltk.download('stopwords', download_dir=CACHE_DIR)
+nltk.download('punkt_tab', download_dir=CACHE_DIR)
 
 def make_summary(text, ratio=0.1, max_sentences=10):
     sentences = sent_tokenize(text)

@@ -1,7 +1,7 @@
-from ..utils.nlp_processor import compare_corpora
-from ..utils.neo4j_connector import Neo4jConnector
 import pandas as pd
 import json
+from utils.nlp_processor import compare_corpora
+from utils.neo4j_connector import Neo4jConnector
 
 corpus = None
 titles = None
@@ -144,7 +144,7 @@ def clear_correlation_database():
 
 # Wrapper function to test the Neo4j database connection
 def test_db_connection():
-    from ..utils.neo4j_connector import Neo4jConnector  # local import if needed
+    from utils.neo4j_connector import Neo4jConnector  # local import if needed
     connector = Neo4jConnector()
     success = connector.test_connection()
     connector.close()
