@@ -34,15 +34,32 @@ class LDA:
         return clusters, topic_distribution
 
     def visualize_clusters(self, ids, clusters, output_path="lda_clusters.png"):
-        plt.figure(figsize=(10, 6))
-        plt.scatter(ids, clusters, c=clusters, cmap='viridis')
-        plt.xlabel("Document ID")
-        plt.ylabel("Cluster")
-        plt.title("LDA Clustering Visualization")
-        plt.colorbar(label="Cluster")
-        # Annotate each point with its document id
-        for doc_id, cluster in zip(ids, clusters):
-            plt.text(doc_id, cluster, str(doc_id), fontsize=8, ha='center', va='bottom')
+        # Create a figure with two subplots in 70:30 ratio
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 7), gridspec_kw={'width_ratios': [7, 3]})
+        
+        # Plot clusters on the left
+        scatter = ax1.scatter(ids, clusters, c=clusters, cmap='viridis')
+        ax1.set_xlabel("Document ID")
+        ax1.set_ylabel("Topic Cluster")
+        ax1.set_title("LDA Topic Clustering")
+        
+        # Get titles from printed_data.csv
+        import pandas as pd
+        df = pd.read_csv("printed_data.csv")
+        id_title = dict(enumerate(df["Title"].tolist()))
+        
+        # Create legend handles on the right
+        handles = [plt.Line2D([0], [0], marker='o', color='w', 
+                            markerfacecolor=scatter.cmap(scatter.norm(cluster)), 
+                            markersize=5, 
+                            label=f"ID {doc_id}: {id_title.get(doc_id, 'Unknown')}") 
+                  for doc_id, cluster in zip(ids, clusters) if id_title.get(doc_id) != "No Title"]
+        
+        # Add legend to right subplot
+        ax2.legend(handles=handles, loc='center', bbox_to_anchor=(0.5, 0.5))
+        ax2.axis('off')
+        
+        plt.tight_layout()
         plt.savefig(output_path)
         plt.close()
 
