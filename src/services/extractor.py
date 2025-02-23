@@ -26,16 +26,12 @@ df_global = None  # Global variable to store the DataFrame
 
 # Function to extract the title and meaningful content from a BeautifulSoup object
 def extract_content(soup):
-    title = soup.title.string if soup.title else None
+    title = soup.title.string if soup.title else "No Title"
     content = ""
     
     # Extract meaningful content (subtitles and paragraphs)
     for tag in soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p']):
         content += tag.get_text() + "\n"
-    
-    # Validate content
-    if not title or not content.strip():
-        raise ValueError("No meaningful content found in the article")
     
     return title, content
 
