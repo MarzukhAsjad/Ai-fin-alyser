@@ -219,14 +219,31 @@ def show_view_data():
 def show_correlations():
     st.header("Correlation Analysis")
     
+    # Updated Calculate Correlation button using streaming response
     if st.button("Calculate Correlation"):
-        result = async_api_call(
-            requests.get,
-            f"{API_BASE_URL}/calculate-correlation/",
-            loading_text="Calculating correlations..."
-        )
-        if result:
-            st.write(result)
+        progress_text = st.empty()
+        progress_bar = st.progress(0)
+        with st.spinner("Calculating correlations..."):
+            try:
+                response = requests.get(f"{API_BASE_URL}/calculate-correlation/", stream=True)
+                for line in response.iter_lines():
+                    if line:
+                        try:
+                            update = json.loads(line.decode("utf-8"))
+                            total = update.get("total_pairs", 1)
+                            processed = update.get("processed_pairs", 0)
+                            status = update.get("current_status", "")
+                            progress = processed / total if total else 1
+                            
+                            progress_bar.progress(progress)
+                            progress_text.text(f"Status: {status} — {processed} of {total} pairs processed")
+                            
+                            if status == "Completed":
+                                st.success("Correlation calculation completed!")
+                        except Exception as e:
+                            st.error(f"Error parsing update: {e}")
+            except Exception as e:
+                st.error(f"Error during correlation calculation: {e}")
     
     if st.button("Show All Correlations"):
         result = async_api_call(
