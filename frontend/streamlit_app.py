@@ -245,15 +245,6 @@ def show_correlations():
             except Exception as e:
                 st.error(f"Error during correlation calculation: {e}")
     
-    if st.button("Show All Correlations"):
-        result = async_api_call(
-            requests.get,
-            f"{API_BASE_URL}/query-all-correlations/",
-            loading_text="Loading correlations..."
-        )
-        if result:
-            st.write(result)
-    
     if st.button("Show Pairwise Causal Relations"):
         result = async_api_call(
             requests.get,
