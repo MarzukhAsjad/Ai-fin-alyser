@@ -3,7 +3,8 @@ from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 import matplotlib
 matplotlib.use('Agg')  # Set backend to non-interactive Agg
 import matplotlib.pyplot as plt
-from services.causal import query_all_correlations
+from services.causal import query_all_correlations, query_all_corpora
+from utils.lda import LDA 
 import math
 import logging
 import pandas as pd  # NEW: to read printed_data.csv for titles
@@ -110,3 +111,14 @@ def run_hierarchical_clustering():
         logger.error(f"Error in hierarchical clustering: {e}")
         raise
 
+def use_lda_for_clustering():
+    lda = LDA(n_topics=5, max_iter=10, random_state=42)
+    # Query data
+    corpora = query_all_corpora()
+    # Extract all copora and ids
+    corpus = [corpus["corpus"] for corpus in corpora]
+    ids = [corpus["id"] for corpus in corpora]
+    # Run LDA clustering
+    lda.run(corpus, ids)
+    logger.info("LDA clustering completed.")
+    return {"message": "LDA clustering completed."}
