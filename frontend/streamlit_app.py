@@ -123,13 +123,14 @@ def main():
     # Sidebar navigation
     page = st.sidebar.selectbox(
         "Choose a function",
-        ["Home", "Upload Data", "Correlations", "Database Operations", "Clustering"]
+        ["Home", "Upload Data", "View Data", "Correlations", "Database Operations", "Clustering"]
     )
 
     if page == "Home":
         show_home()
     elif page == "Upload Data":
         show_upload_page()
+    elif page == "View Data":
         show_view_data()
     elif page == "Correlations":
         show_correlations()
@@ -202,6 +203,18 @@ def show_view_data():
                     
             except Exception as e:
                 st.error(f"Error loading data: {str(e)}")
+
+    st.subheader("Query by Title")
+    title = st.text_input("Enter title to search")
+    if title and st.button("Search"):
+        result = async_api_call(
+            requests.get,
+            f"{API_BASE_URL}/query-by-title/",
+            params={"title": title},
+            loading_text="Searching..."
+        )
+        if result:
+            st.write(result)
 
 def show_correlations():
     st.header("Correlation Analysis")
