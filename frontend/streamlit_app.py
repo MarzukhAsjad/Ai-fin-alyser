@@ -288,9 +288,13 @@ def show_database_operations():
 def show_clustering():
     st.header("Hierarchical Clustering Analysis")
     
-    # Initialize session state
+    # Initialize session state for hierarchical clustering
     if 'clustering_completed' not in st.session_state:
         st.session_state.clustering_completed = False
+
+    # Initialize session state for LDA clustering
+    if 'lda_completed' not in st.session_state:
+        st.session_state.lda_completed = False
     
     # Add tabs for different clustering methods
     tab1, tab2 = st.tabs(["Hierarchical Clustering", "LDA Clustering"])
@@ -339,7 +343,7 @@ def show_clustering():
                 st.error("LDA clustering failed")
                 st.session_state.lda_completed = False
         
-        if col4.button("View LDA Results"):
+        if col4.button("View LDA Results", disabled=not st.session_state.lda_completed):
             with st.spinner("Loading LDA visualization..."):
                 response = requests.get(f"{API_BASE_URL}/download-lda-clustering-image/")
                 if response.status_code == 200:
